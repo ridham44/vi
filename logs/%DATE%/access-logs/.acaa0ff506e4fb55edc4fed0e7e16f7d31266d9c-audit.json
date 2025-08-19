@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 60
+    },
+    "auditLog": "/home/chpl/Downloads/node-demo-structure-main/logs/%DATE%/access-logs/.acaa0ff506e4fb55edc4fed0e7e16f7d31266d9c-audit.json",
+    "files": [
+        {
+            "date": 1755513699335,
+            "name": "/home/chpl/Downloads/node-demo-structure-main/logs/2025-08-18/access-logs/app-info-2025-08-18.log",
+            "hash": "bdd5de7da5cdb1611a8bb40254ecb0f7811ce5ac85b9ab279cbcedbda6b124dd"
+        }
+    ],
+    "hashType": "sha256"
+}

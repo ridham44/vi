@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 60
+    },
+    "auditLog": "/home/chpl/Yomesh/chpl-vi/logs/%DATE%/access-logs/.06ae115f195a73ee15f3b4c24a22a8050c49c0ad-audit.json",
+    "files": [
+        {
+            "date": 1755579222739,
+            "name": "/home/chpl/Yomesh/chpl-vi/logs/2025-08-19/access-logs/app-info-2025-08-19.log",
+            "hash": "a95c02ca74f4b596f1a9994e2f9e2c7a7df86e9df33130890a45caf0d7d18223"
+        }
+    ],
+    "hashType": "sha256"
+}

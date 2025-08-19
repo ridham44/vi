@@ -1,0 +1,24 @@
+{
+    "development": {
+        "enable": true,
+        "clsNamespace": "session",
+        "clsUser": "user",
+        "clsUserId": "userId",
+        "clsStartTime": "startTime",
+        "requestPath": "requestPath",
+        "requestMethod": "requestMethod",
+        "clientIP": "clientIP",
+        "userAgent": "userAgent"
+    },
+    "production": {
+        "enable": true,
+        "clsNamespace": "session",
+        "clsUser": "user",
+        "clsUserId": "userId",
+        "clsStartTime": "startTime",
+        "requestPath": "requestPath",
+        "requestMethod": "requestMethod",
+        "clientIP": "clientIP",
+        "userAgent": "userAgent"
+    }
+}

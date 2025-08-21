@@ -22,6 +22,11 @@ module.exports = {
                 defaultValue: false,
                 allowNull: false,
             },
+            isMasterAdmin: {
+                type: Sequelize.BOOLEAN,
+                defaultValue: false,
+                allowNull: false,
+            },
             systemDefault: {
                 type: Sequelize.BOOLEAN,
                 allowNull: false,

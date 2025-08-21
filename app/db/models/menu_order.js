@@ -1,7 +1,7 @@
 'use strict';
 module.exports = (sequelize, Sequelize) => {
-    const Role = sequelize.define(
-        'Role',
+    const MenuOrder = sequelize.define(
+        'MenuOrder',
         {
             id: {
                 type: Sequelize.UUID,
@@ -13,50 +13,50 @@ module.exports = (sequelize, Sequelize) => {
                 type: Sequelize.STRING(100),
                 allowNull: false,
             },
-            isSystemAdmin: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: false,
-                allowNull: false,
+            url: {
+                type: Sequelize.STRING(150),
+                allowNull: true,
             },
-            isAdmin: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: false,
-                allowNull: false,
+            icon: {
+                type: Sequelize.STRING(100),
+                allowNull: true,
             },
-            isMasterAdmin: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: false,
-                allowNull: false,
-            },
-            systemDefault: {
+            subMenu: {
                 type: Sequelize.BOOLEAN,
                 allowNull: false,
                 defaultValue: false,
-            },
-            description: {
-                type: Sequelize.TEXT,
-                allowNull: false,
             },
             level: {
                 type: Sequelize.INTEGER,
                 allowNull: true,
             },
-            status: {
-                type: Sequelize.ENUM('1', '0'),
-                allowNull: false,
-                defaultValue: '1',
-                comment: '0 for InActive, 1 for Active',
+            key: {
+                type: Sequelize.STRING(100),
+                allowNull: true,
             },
-            tenantId: {
+            parentId: {
                 type: Sequelize.UUID,
-                allowNull: false,
+                allowNull: true,
                 association: {
-                    model: 'Tenant',
+                    model: 'MenuOrder',
                     key: 'id',
                     onUpdate: 'CASCADE',
                     onDelete: 'RESTRICT',
-                    belongsToAlias: 'Tenant',
+                    belongsToAlias: 'Parent',
+                    hasManyAlias: 'MenuOrder',
                 },
+            },
+            type: {
+                type: Sequelize.ENUM('1', '2', '3'),
+                allowNull: false,
+                defaultValue: '1',
+                comment: '1 for group, 2 for module, 3 for right',
+            },
+            status: {
+                type: Sequelize.ENUM('0', '1'),
+                allowNull: false,
+                defaultValue: '1',
+                comment: '0 for InActive, 1 for Active',
             },
             createdAt: {
                 type: Sequelize.DATE,
@@ -72,26 +72,16 @@ module.exports = (sequelize, Sequelize) => {
             },
         },
         {
-            tableName: 'role',
+            tableName: 'menu_order',
             customOptions: {
                 createdBy: { value: true },
                 updatedBy: { value: true },
                 deletedBy: { value: true },
             },
-            defaultScope: {
-                where: {
-                    deletedAt: null,
-                },
-            },
-            scopes: {
-                withDeleted: {
-                    where: {},
-                },
-            },
         }
     );
 
-    Role.hasTenantCondition();
+    MenuOrder.hasTenantCondition(false);
 
-    return Role;
+    return MenuOrder;
 };

@@ -10,6 +10,7 @@ module.exports = {
                     name: 'CRM Main Admin',
                     isSystemAdmin: '0',
                     isAdmin: '0',
+                    isMasterAdmin: '1',
                     systemDefault: true,
                     description: 'CRM Main Admin',
                     status: '1',

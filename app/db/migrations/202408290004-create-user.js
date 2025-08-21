@@ -1,14 +1,12 @@
 'use strict';
-const bcrypt = require('bcrypt');
 
-module.exports = (sequelize, Sequelize) => {
-    const User = sequelize.define(
-        'User',
-        {
+module.exports = {
+    up: async (queryInterface, Sequelize) => {
+        await queryInterface.createTable('user', {
             id: {
                 type: Sequelize.UUID,
+                allowNull: false,
                 primaryKey: true,
-                allowNull: true,
                 defaultValue: Sequelize.UUIDV4,
             },
             firstName: {
@@ -34,52 +32,40 @@ module.exports = (sequelize, Sequelize) => {
             email: {
                 type: Sequelize.STRING,
                 allowNull: true,
-                set(value) {
-                    this.setDataValue('email', value?.toLowerCase());
-                },
             },
             password: {
                 type: Sequelize.STRING,
                 allowNull: true,
-                set(value) {
-                    this.setDataValue('password', bcrypt.hashSync(value, 10));
-                },
             },
             roleId: {
                 type: Sequelize.UUID,
                 allowNull: true,
-                association: {
-                    model: 'Role',
+                references: {
+                    model: 'role',
                     key: 'id',
-                    onUpdate: 'CASCADE',
-                    onDelete: 'RESTRICT',
-                    belongsToAlias: 'Role',
-                    hasManyAlias: 'Users',
                 },
+                onUpdate: 'CASCADE',
+                onDelete: 'RESTRICT',
             },
             departmentId: {
                 type: Sequelize.UUID,
                 allowNull: true,
-                association: {
-                    model: 'Department',
+                references: {
+                    model: 'department',
                     key: 'id',
-                    onUpdate: 'CASCADE',
-                    onDelete: 'RESTRICT',
-                    belongsToAlias: 'Department',
-                    hasManyAlias: 'Users',
                 },
+                onUpdate: 'CASCADE',
+                onDelete: 'RESTRICT',
             },
             tenantId: {
                 type: Sequelize.UUID,
                 allowNull: true,
-                association: {
-                    model: 'Tenant',
+                references: {
+                    model: 'tenant',
                     key: 'id',
-                    onUpdate: 'CASCADE',
-                    onDelete: 'RESTRICT',
-                    belongsToAlias: 'Tenant',
-                    hasManyAlias: 'Users',
                 },
+                onUpdate: 'CASCADE',
+                onDelete: 'RESTRICT',
             },
             profileImage: {
                 type: Sequelize.TEXT,
@@ -115,39 +101,42 @@ module.exports = (sequelize, Sequelize) => {
             createdAt: {
                 type: Sequelize.DATE,
                 allowNull: false,
-                onCreate: sequelize.literal('CURRENT_TIMESTAMP'),
+                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
             },
             updatedAt: {
                 type: Sequelize.DATE,
-                onUpdate: sequelize.literal('CURRENT_TIMESTAMP'),
+                allowNull: true,
+                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
             },
             deletedAt: {
                 type: Sequelize.DATE,
+                allowNull: true,
             },
-        },
-        {
-            tableName: 'user',
-            indexes: [{ unique: true, fields: ['email'] }],
-            customOptions: {
-                createdBy: { value: true },
-                updatedBy: { value: true },
-                deletedBy: { value: true },
+            createdBy: {
+                type: Sequelize.UUID,
+                allowNull: true,
             },
-            defaultScope: {
-                attributes: {
-                    exclude: ['password'],
-                },
+            updatedBy: {
+                type: Sequelize.UUID,
+                allowNull: true,
             },
-            scopes: {
-                withPassword: {
-                    attributes: {
-                        include: ['password'],
-                    },
-                },
+            deletedBy: {
+                type: Sequelize.UUID,
+                allowNull: true,
             },
-        }
-    );
+        });
 
-    User.hasTenantCondition();
-    return User;
+        // Unique index on email
+        await queryInterface.addIndex('user', ['email'], {
+            unique: true,
+            name: 'user_email_unique',
+        });
+    },
+
+    down: async (queryInterface, Sequelize) => {
+        await queryInterface.removeIndex('user', 'user_email_unique');
+        await queryInterface.dropTable('user');
+        await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_user_isEmailVerified";');
+        await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_user_status";');
+    },
 };

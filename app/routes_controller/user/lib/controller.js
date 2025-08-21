@@ -21,6 +21,7 @@ exports.userLogin = async (req, res) => {
                 email: email,
                 status: enums.Status.Active.value,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -56,6 +57,8 @@ exports.userLogin = async (req, res) => {
 
         return res.status(status.OK).json({ status: true, message: 'Login Success', data: response });
     } catch (err) {
+        console.log(err);
+
         await transaction.rollback();
         return common.throwException(err, 'User Login Api', req, res);
     }

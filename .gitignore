@@ -1,8 +1,11 @@
-# Ignore node_modules directory
-node_modules/
-
-# Ignore .env file
+/node_modules
+.eslintcache
+package-lock.json
+.DS_Store
+/uploads
 .env
-
-# Ignore log files
 *.log
+/access-logs
+/webhookLogs
+/logs
+/firebaseAdminSDK.json

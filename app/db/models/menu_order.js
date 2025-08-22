@@ -58,6 +58,11 @@ module.exports = (sequelize, Sequelize) => {
                 defaultValue: '1',
                 comment: '0 for InActive, 1 for Active',
             },
+            forWhom: {
+                type: Sequelize.ENUM('Master', 'Tenant', 'Both'),
+                allowNull: false,
+                defaultValue: 'Both',
+            },
             createdAt: {
                 type: Sequelize.DATE,
                 allowNull: false,

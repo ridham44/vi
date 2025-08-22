@@ -1,7 +1,7 @@
 'use strict';
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable('menu_order_tenant', {
+        await queryInterface.createTable('menu_order_role', {
             id: {
                 type: Sequelize.UUID,
                 primaryKey: true,
@@ -18,11 +18,11 @@ module.exports = {
                 onUpdate: 'CASCADE',
                 onDelete: 'CASCADE',
             },
-            tenantId: {
+            roleId: {
                 type: Sequelize.UUID,
                 allowNull: false,
                 references: {
-                    model: 'tenant',
+                    model: 'role',
                     key: 'id',
                 },
                 onUpdate: 'CASCADE',
@@ -32,11 +32,7 @@ module.exports = {
                 type: Sequelize.INTEGER,
                 allowNull: true,
             },
-            forWhom: {
-                type: Sequelize.ENUM('Tenant', 'Master', 'Both'),
-                allowNull: false,
-                defaultValue: 'Both',
-            },
+
             status: {
                 type: Sequelize.ENUM('0', '1'),
                 allowNull: false,
@@ -54,6 +50,6 @@ module.exports = {
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('menu_order_tenant');
+        await queryInterface.dropTable('menu_order_role');
     },
 };

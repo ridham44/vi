@@ -113,100 +113,131 @@ exports.create = async (req, res) => {
         return common.throwException(err, 'Get Menu Order', req, res);
     }
 }; */
-
 exports.findAll = async (req, res) => {
     try {
-        const userInclude = [
-            {
-                model: db.User,
-                as: 'CreatedByUser',
-                attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
+        const results = await db.MenuOrderRole.findAll({
+            attributes:[],
+            where: {
+                roleId: req.user.roleId,
             },
-            {
-                model: db.User,
-                as: 'UpdatedByUser',
-                attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
-            },
-        ];
-
-        const include = [];
-        let whereCondition = {
-            tenantId: req.user.tenantId,
-        };
-
-        /* if (req.path.endsWith('route')) {
-            whereCondition.status = '1';
-        } */
-
-        if (req.query.id && req.query.id !== 'null') {
-            const parentMenu = await db.MenuOrderTenant.findOne({
-                attributes: ['menuOrderId'],
-                where: {
-                    id: req.query.id,
-                },
-            });
-
-            if (parentMenu) {
-                const menuOrders = await db.MenuOrder.findAll({
-                    attributes: ['id'],
-                    where: {
-                        deletedAt: null,
-                        parentId: parentMenu.menuOrderId,
-                        type: enums.MenuOrderType.Module,
-                    },
-                    raw: true,
-                });
-
-                if (menuOrders.length <= 0) {
-                    return res.status(status.OK).json({ data: [] });
-                }
-
-                whereCondition.menuOrderId = { [Op.in]: menuOrders.map((item) => item.id) };
-            }
-
-            include.push({
-                model: db.MenuOrder,
-                as: 'MenuOrder',
-                attributes: { exclude: ['level', 'status'] },
-                where: {
-                    deletedAt: null,
-                },
-                include: [
-                    ...userInclude,
-                    {
-                        model: db.MenuOrder,
-                        as: 'Parent',
-                        attributes: ['id', 'name'],
-                    },
-                ],
-            });
-        } else {
-            include.push({
-                model: db.MenuOrder,
-                as: 'MenuOrder',
-                attributes: { exclude: ['level', 'status'] },
-                where: {
-                    deletedAt: null,
-                    parentId: null,
-                    type: enums.MenuOrderType.Group,
-                },
-                include: [...userInclude],
-            });
-        }
-
-        const menuOrderTenant = await db.MenuOrderTenant.findAll({
-            attributes: ['id', 'status', 'level'],
-            where: whereCondition,
-            include,
-            order: [['level', 'ASC']],
             disableTenantCheck: true,
+            include: [
+                {
+                    model: db.MenuOrder,
+                    as: 'MenuOrder',
+                    where: {
+                        status: enums.Status.Active.value,
+                        [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+                    },
+                },
+            ],
         });
 
-        return res.status(status.OK).json({ data: menuOrderTenant });
+        // let results = await db.MenuOrder.findAll({
+        //     where: {
+        //         status: enums.Status.Active.value,
+        //         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+        //     },
+        // });
+        return res.status(status.OK).json({ data: results });
     } catch (err) {
-        return common.throwException(err, 'Get Menu Order Tenant', req, res);
+        return common.throwException(err, 'Get Menu Order', req, res);
     }
 };
+
+// exports.findAll = async (req, res) => {
+//     try {
+//         const userInclude = [
+//             {
+//                 model: db.User,
+//                 as: 'CreatedByUser',
+//                 attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
+//             },
+//             {
+//                 model: db.User,
+//                 as: 'UpdatedByUser',
+//                 attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
+//             },
+//         ];
+
+//         const include = [];
+//         let whereCondition = {
+//             tenantId: req.user.tenantId,
+//         };
+
+//         /* if (req.path.endsWith('route')) {
+//             whereCondition.status = '1';
+//         } */
+
+//         if (req.query.id && req.query.id !== 'null') {
+//             const parentMenu = await db.MenuOrderTenant.findOne({
+//                 attributes: ['menuOrderId'],
+//                 where: {
+//                     id: req.query.id,
+//                 },
+//             });
+
+//             if (parentMenu) {
+//                 const menuOrders = await db.MenuOrder.findAll({
+//                     attributes: ['id'],
+//                     where: {
+//                         deletedAt: null,
+//                         parentId: parentMenu.menuOrderId,
+//                         type: enums.MenuOrderType.Module,
+//                     },
+//                     raw: true,
+//                 });
+
+//                 if (menuOrders.length <= 0) {
+//                     return res.status(status.OK).json({ data: [] });
+//                 }
+
+//                 whereCondition.menuOrderId = { [Op.in]: menuOrders.map((item) => item.id) };
+//             }
+
+//             include.push({
+//                 model: db.MenuOrder,
+//                 as: 'MenuOrder',
+//                 attributes: { exclude: ['level', 'status'] },
+//                 where: {
+//                     deletedAt: null,
+//                 },
+//                 include: [
+//                     ...userInclude,
+//                     {
+//                         model: db.MenuOrder,
+//                         as: 'Parent',
+//                         attributes: ['id', 'name'],
+//                     },
+//                 ],
+//             });
+//         } else {
+//             include.push({
+//                 model: db.MenuOrder,
+//                 as: 'MenuOrder',
+//                 attributes: { exclude: ['level', 'status'] },
+//                 where: {
+//                     deletedAt: null,
+//                     parentId: null,
+//                     type: enums.MenuOrderType.Group,
+//                 },
+//                 include: [...userInclude],
+//             });
+//         }
+
+//         const menuOrderTenant = await db.MenuOrderTenant.findAll({
+//             attributes: ['id', 'status', 'level'],
+//             where: whereCondition,
+//             include,
+//             order: [['level', 'ASC']],
+//             disableTenantCheck: true,
+//         });
+
+//         return res.status(status.OK).json({ data: menuOrderTenant });
+//     } catch (err) {
+//         return common.throwException(err, 'Get Menu Order Tenant', req, res);
+//     }
+// };
 
 exports.findAllRoute = async (req, res) => {
     try {
@@ -853,5 +884,28 @@ exports.deleteModule = async (req, res) => {
         return res.status(status.OK).json({ message: 'Module deleted successfully.' });
     } catch (err) {
         return common.throwException(err, 'Delete Menu Order For Module', req, res);
+    }
+};
+
+exports.insertall = async (req, res) => {
+    try {
+        
+        let data = await db.MenuOrder.findAll({ attributes: ['id'] });
+
+        // console.log(data[0].dataValues.id);
+        data.map(async(d)=>{
+            let menuOrderpayload={
+                menuOrderId:d.dataValues.id,
+                roleId:"6cff3d9f-02d8-11ef-8c8d-74563c332520"
+            }
+            // console.log(d.dataValues.id);
+            await db.MenuOrderRole.create(menuOrderpayload);
+        })
+
+        return res.status(status.OK).json({ messages: 'success' });
+
+        // let insert=await db.MenuOrderRole.create
+    } catch (err) {
+        return common.throwException(err, 'Update menu order Status for module', req, res);
     }
 };

@@ -29,16 +29,16 @@ module.exports = (sequelize, Sequelize) => {
                 type: Sequelize.STRING,
                 allowNull: true,
             },
-            mobileRegex: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            isOTPEnable: {
-                type: Sequelize.ENUM('0', '1'),
-                allowNull: true,
-                defaultValue: '1',
-                comment: '0 for disable, 1 for enable',
-            },
+            // mobileRegex: {
+            //     type: Sequelize.STRING,
+            //     allowNull: true,
+            // },
+            // isOTPEnable: {
+            //     type: Sequelize.ENUM('0', '1'),
+            //     allowNull: true,
+            //     defaultValue: '1',
+            //     comment: '0 for disable, 1 for enable',
+            // },
             createdAt: {
                 type: Sequelize.DATE,
                 allowNull: false,

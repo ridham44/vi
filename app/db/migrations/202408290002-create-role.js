@@ -39,6 +39,16 @@ module.exports = {
                 type: Sequelize.ENUM('0', '1'),
                 comment: '0 for InActive, 1 for Active',
             },
+            tenantId: {
+                type: Sequelize.UUID,
+                allowNull: true,
+                references: {
+                    model: 'tenant',
+                    key: 'id',
+                },
+                onUpdate: 'CASCADE',
+                onDelete: 'RESTRICT',
+            },
             createdAt: {
                 allowNull: false,
                 type: Sequelize.DATE,
@@ -50,10 +60,6 @@ module.exports = {
             deletedAt: {
                 allowNull: true,
                 type: Sequelize.DATE,
-            },
-            level: {
-                type: Sequelize.INTEGER,
-                allowNull: true,
             },
         });
     },

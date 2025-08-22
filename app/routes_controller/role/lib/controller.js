@@ -1,0 +1,361 @@
+require('dotenv').config();
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
+const db = require('../../../db/models');
+const { status, common, enums } = require('../../../../utils');
+const moment = require('moment-timezone');
+
+exports.createRole = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
+
+        let whereCondition = { name: name, deletedAt: null };
+        if (req.user.type != 'Master') {
+            whereCondition.tenantId = req.user.tenantId;
+        }
+
+        const checkExist = await db.Role.findOne({
+            where: whereCondition,
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (checkExist) {
+            await transaction.rollback();
+            return res.status(status.Conflict).json({ status: false, message: 'Role already exists!' });
+        }
+
+        const payload = {
+            name,
+            isSystemAdmin,
+            isAdmin,
+            createdBy: req.user.id,
+        };
+        let role = await db.Role.create(payload, { transaction });
+
+        await Promise.all(
+            menuOrders.map(async (data) => {
+                const menuOrderpayload = {
+                    menuOrderId: data,
+                    roleId: role.id,
+                    tenantId: req.user.tenantId,
+                };
+                await db.MenuOrderRole.create(menuOrderpayload, { transaction });
+            })
+        );
+
+        await transaction.commit();
+
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Role created successfully.',
+        });
+    } catch (err) {
+        console.log(err);
+
+        await transaction.rollback();
+        return common.throwException(err, 'Create Role Api', req, res);
+    }
+};
+
+exports.updateStatus = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const { id } = req.params;
+
+        const checkExist = await db.Role.findOne({
+            where: {
+                id,
+                deletedAt: null,
+                tenantId: req.user.tenantId,
+            },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (!checkExist) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
+        }
+
+        checkExist.set({
+            status: checkExist.status === enums.Status.Active.value ? enums.Status.Inactive.value : enums.Status.Active.value,
+            updatedBy: req.user.id,
+        });
+
+        await checkExist.save({ transaction });
+
+        await transaction.commit();
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Status updated successfully.',
+        });
+    } catch (err) {
+        await transaction.rollback();
+        return common.throwException(err, 'Role Status Update Api', req, res);
+    }
+};
+
+exports.updateRole = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
+
+        const checkExist = await db.Role.findOne({
+            where: {
+                id,
+                deletedAt: null,
+                tenantId: req.user.tenantId,
+            },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (!checkExist) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
+        }
+
+        const checkIfRoleExist = await db.Role.findOne({
+            where: {
+                name: name,
+                id: {
+                    [Op.ne]: id,
+                },
+                deletedAt: null,
+                tenantId: req.user.tenantId,
+            },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (checkIfRoleExist) {
+            await transaction.rollback();
+            return res.status(status.Conflict).json({ status: false, message: 'Role already exists!' });
+        }
+
+        const recordsToDelete = await db.MenuOrderRole.findAll({
+            where: {
+                roleId: id,
+            },
+            disableTenantCheck: true,
+            include: [
+                {
+                    model: db.Role,
+                    as: 'Role',
+                    where: {
+                        tenantId: req.user.tenantId,
+                    },
+                },
+            ],
+        });
+
+        const idsToDelete = recordsToDelete.map((r) => r.id);
+        if (idsToDelete.length > 0) {
+            await db.MenuOrderRole.destroy({
+                where: {
+                    id: idsToDelete,
+                },
+            });
+        }
+
+        await Promise.all(
+            menuOrders.map(async (data) => {
+                const menuOrderpayload = {
+                    menuOrderId: data,
+                    roleId: id,
+                    tenantId: req.user.tenantId,
+                };
+                await db.MenuOrderRole.create(menuOrderpayload, { transaction });
+            })
+        );
+        const payload = {
+            name,
+            isSystemAdmin,
+            isAdmin,
+            description: req.body?.description,
+            updatedAt: new Date(),
+            updatedBy: req.user.id,
+        };
+
+        await db.Role.update(payload, { where: { id: id }, transaction });
+        await transaction.commit();
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Role updated successfully.',
+        });
+    } catch (err) {
+        await transaction.rollback();
+        return common.throwException(err, 'Update Role Api', req, res);
+    }
+};
+
+exports.deleteRole = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const { id } = req.params;
+
+        const checkExist = await db.Role.findOne({
+            where: {
+                id,
+                deletedAt: null,
+                tenantId: req.user.tenantId,
+            },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (!checkExist) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
+        }
+
+        await checkExist.update(
+            {
+                deletedAt: new Date(),
+                deletedBy: req.user.id,
+            },
+            { transaction }
+        );
+
+        await transaction.commit();
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Role deleted successfully.',
+        });
+    } catch (err) {
+        await transaction.rollback();
+        return common.throwException(err, 'Delete Role Api', req, res);
+    }
+};
+
+exports.getRole = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const { id } = req.params;
+
+        const checkExist = await db.Role.findOne({
+            attributes: ['name', 'isSystemAdmin', 'isAdmin', 'description', 'status'],
+            where: {
+                id: id,
+                status: enums.Status.Active.value,
+                tenantId: req.user.tenantId,
+                deletedAt: null,
+            },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (!checkExist) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
+        }
+
+        await transaction.commit();
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Success.',
+            data: checkExist,
+        });
+    } catch (err) {
+        await transaction.rollback();
+        return common.throwException(err, 'Get Role Api', req, res);
+    }
+};
+
+exports.getAllRole = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        // const { firstName, lastName, mobile, email, page, pageSize, skip, take, startDate, endDate, isActive, search } = req.query;
+        const { name, isSystemAdmin, isAdmin, page, pageSize, startDate, endDate, isActive, search } = req.query;
+
+        const dateFormat = 'YYYY-MM-DD';
+        const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+        const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+        const pages = parseInt(page, 10) || 1;
+        const pageSizes = parseInt(pageSize, 10) || 10;
+
+        // Ensure 'skip' and 'take' are integers and provide defaults
+        // const skipRecords = parseInt(skip, 10) || 0;
+        // const takeRecords = parseInt(take, 10) || 100;
+
+        let whereCondition = {
+            deletedAt: null,
+            tenantId: req.user.tenantId,
+        };
+
+        if (startDate && endDate) {
+            whereCondition.createdAt = {
+                [Op.between]: [firstDate, lastDate],
+            };
+        } else if (startDate) {
+            whereCondition.createdAt = {
+                [Op.gte]: firstDate,
+            };
+        } else if (endDate) {
+            whereCondition.createdAt = {
+                [Op.lte]: lastDate,
+            };
+        }
+
+        if (name) {
+            whereCondition.name = {
+                [Op.like]: `%${name}%`,
+            };
+        }
+
+        if (isSystemAdmin) {
+            whereCondition.isSystemAdmin = isSystemAdmin;
+        }
+
+        if (isAdmin) {
+            whereCondition.isAdmin = isAdmin;
+        }
+
+        if (isActive) {
+            whereCondition.status = {
+                [Op.like]: `%${isActive}%`,
+            };
+        }
+
+        if (search) {
+            whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
+        }
+        const findAll = await db.Role.findAll({
+            attributes: ['id', 'name', 'isSystemAdmin', 'isAdmin', 'description', 'status', 'createdAt'],
+            where: {
+                ...whereCondition,
+            },
+            disableTenantCheck: true,
+            order: [['createdAt', 'DESC']],
+            limit: pageSizes,
+            offset: (pages - 1) * pageSizes,
+        });
+
+        const findCount = await db.Role.count({ where: whereCondition, disableTenantCheck: true });
+
+        if (findAll.length === 0) {
+            await transaction.rollback();
+            return res.status(status.OK).json({
+                status: true,
+                message: 'No data found!',
+            });
+        }
+        let response = {
+            user: findAll,
+            totalCount: findCount,
+        };
+
+        await transaction.commit();
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Success.',
+            data: response,
+        });
+    } catch (err) {
+        await transaction.rollback();
+        return common.throwException(err, 'Get Role List Api', req, res);
+    }
+};

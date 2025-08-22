@@ -8,7 +8,7 @@ module.exports = (sequelize, Sequelize) => {
             id: {
                 type: Sequelize.UUID,
                 primaryKey: true,
-                allowNull: true,
+                allowNull: false,
                 defaultValue: Sequelize.UUIDV4,
             },
             firstName: {
@@ -21,7 +21,7 @@ module.exports = (sequelize, Sequelize) => {
             },
             crmUserId: {
                 type: Sequelize.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             countryCode: {
                 type: Sequelize.STRING,

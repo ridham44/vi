@@ -14,7 +14,6 @@ const authenticateUser = async (req, res, next) => {
         if (!decoded) {
             return res.status(status.Unauthorized).json({ message: 'Unauthorized access2.' });
         }
-        console.log('userID', decoded.id);
 
         const user = await db.User.scope('withPassword').findOne({
             attributes: {
@@ -61,7 +60,7 @@ const authenticateUser = async (req, res, next) => {
         // let namespace = getNamespace(config.clsNamespace);
 
         return next();
-    } catch (err) {
+    } catch (err) {        
         return res.status(status.Unauthorized).json({ message: 'Unauthorized access.' });
     }
 };

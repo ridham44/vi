@@ -19,7 +19,7 @@ module.exports = {
             },
             crmUserId: {
                 type: Sequelize.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             countryCode: {
                 type: Sequelize.STRING,

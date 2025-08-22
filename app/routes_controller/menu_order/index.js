@@ -2,9 +2,9 @@ const router = require('express').Router();
 const auth = require('../../middlewares/middleware');
 // const authPermission = require('../../middlewares/permission.middleware');
 const controller = require('./lib/controller');
-const { validationUpdateLevelRules } = require('./lib/validation');
-const { expressValidate } = require('../../../utils/lib/common-function');
-const { modules } = require('../../../utils');
+// const { validationUpdateLevelRules } = require('./lib/validation');
+// const { expressValidate } = require('../../../utils/lib/common-function');
+// const { modules } = require('../../../utils');
 
 // get all menu-order
 // router.get('/menu-order', auth, authPermission([modules.settings_menu_order]), controller.findAll);

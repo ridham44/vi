@@ -1,14 +1,13 @@
 require('dotenv').config();
-const { Sequelize, fn, literal, where } = require('sequelize');
+const { Sequelize, fn, literal } = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
-const User = db.User;
-const { status, common, enums } = require('../../../../utils');
-const bcrypt = require('bcryptjs');
-const moment = require('moment-timezone');
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const fs = require('fs');
+const { status, common,} = require('../../../../utils');
+// const bcrypt = require('bcryptjs');
+// const moment = require('moment-timezone');
+// const jwt = require('jsonwebtoken');
+// const path = require('path');
+// const fs = require('fs');
 
 exports.inboundCall = async (req, res) => {
     const transaction = await db.sequelize.transaction();
@@ -75,7 +74,6 @@ exports.callLogs = async (req, res) => {
             data: calls,
         });
 
-        return res.status(status.OK).json({ data: result });
     } catch (err) {
         await transaction.rollback();
         return common.throwException(err, 'fetch Call Details  Api', req, res);

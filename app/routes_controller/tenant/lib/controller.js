@@ -361,7 +361,7 @@ exports.getAllTenant = async (req, res) => {
             });
         }
         let response = {
-            user: findAll,
+            tenant: findAll,
             totalCount: findCount,
         };
 

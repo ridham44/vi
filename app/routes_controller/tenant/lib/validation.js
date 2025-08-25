@@ -13,12 +13,12 @@ const validationRules = () => {
             .withMessage('Company name is required.')
             .custom(async (value) => {
                 try {
-                    const user = await db.Tenant.findOne({
+                    const tenant = await db.Tenant.findOne({
                         where: {
                             companyName: value?.toLowerCase(),
                         },
                     });
-                    if (user) {
+                    if (tenant) {
                         return Promise.reject('CompanyName already in Tenant.');
                     }
                     return true;

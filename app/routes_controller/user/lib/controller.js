@@ -90,7 +90,9 @@ exports.changePassword = async (req, res) => {
             where: {
                 id: req.user.id,
                 deletedAt: null,
+                tenantId: req.user.tenantId,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -143,7 +145,9 @@ exports.createUser = async (req, res) => {
             where: {
                 email,
                 deletedAt: null,
+                tenantId: req.user.tenantId,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -182,9 +186,11 @@ exports.updateStatus = async (req, res) => {
 
         const checkExist = await User.findOne({
             where: {
-                id,
+                id: id,
                 deletedAt: null,
+                tenantId: req.user.tenantId,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -370,6 +376,13 @@ exports.getAllUser = async (req, res) => {
         let whereCondition = {
             deletedAt: null,
         };
+        if (req.user.type != 'CRM Main Admin') {
+            whereCondition.tenantId = req.user.tenantId;
+            whereCondition.email = {
+                [Op.ne]: process.env.EMAIL,
+            };
+            whereCondition.tenantId = req.user.tenantId;
+        }
 
         if (startDate && endDate) {
             whereCondition.createdAt = {
@@ -428,12 +441,13 @@ exports.getAllUser = async (req, res) => {
             where: {
                 ...whereCondition,
             },
+            disableTenantCheck: true,
             order: [['createdAt', 'DESC']],
             limit: pageSizes,
             offset: (pages - 1) * pageSizes,
         });
 
-        const findCount = await User.count({ where: whereCondition });
+        const findCount = await User.count({ where: whereCondition, disableTenantCheck: true });
 
         if (findAll.length === 0) {
             await transaction.rollback();

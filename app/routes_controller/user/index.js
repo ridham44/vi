@@ -6,14 +6,14 @@ const { status } = require('../../../utils');
 const { loginRules, changePasswordRules, validationRules, updateValidationRules } = require('./lib/validation');
 const { expressValidate } = require('../../../utils/lib/common-function');
 const multer = require('multer');
-const path = require('path');
+// const path = require('path');
 
 const allowedType = ['image/png', 'image/jpeg', 'image/jpg'];
 
 const fileStorage = multer.diskStorage({
     destination: 'uploads/userProfile',
     filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
+        // const ext = path.extname(file.originalname);
         const filename = file.originalname.replace(/\s+/g, '_');
         cb(null, Date.now() + filename);
     },

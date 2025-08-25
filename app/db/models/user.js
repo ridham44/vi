@@ -21,7 +21,7 @@ module.exports = (sequelize, Sequelize) => {
             },
             crmUserId: {
                 type: Sequelize.STRING,
-                allowNull: false,
+                allowNull: true,
             },
             countryCode: {
                 type: Sequelize.STRING,
@@ -127,7 +127,6 @@ module.exports = (sequelize, Sequelize) => {
         },
         {
             tableName: 'user',
-            indexes: [{ unique: true, fields: ['email'] }],
             customOptions: {
                 createdBy: { value: true },
                 updatedBy: { value: true },

@@ -48,13 +48,10 @@ const authenticateUser = async (req, res, next) => {
                 message: 'Unauthorized access3.',
             });
         }
+        
         let type;
+        type = decoded.type;
 
-        if (user.Role.dataValues.isMasterAdmin) {
-            type = 'Master';
-        } else {
-            type = 'Tenant';
-        }
         // Add the current user instance in request.
         req.user = user;
         req.user.type = type;

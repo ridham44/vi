@@ -22,6 +22,13 @@ exports.userLogin = async (req, res) => {
                 status: enums.Status.Active.value,
             },
             disableTenantCheck: true,
+            include: [
+                {
+                    model: db.Role,
+                    as: 'Role',
+                    attributes: ['name'],
+                },
+            ],
             transaction,
         });
 
@@ -40,6 +47,7 @@ exports.userLogin = async (req, res) => {
             id: user.id,
             firstName: user.firstName,
             email: user.email,
+            type: user.Role.name,
         };
         const token = await jwt.sign(tokenPayload, process.env.JWT_SECRET_API, { expiresIn: process.env.TOKEN_EXPIRE_MIN });
         const userData = {
@@ -48,6 +56,7 @@ exports.userLogin = async (req, res) => {
             mobile: user.mobile,
             email: user.email,
             profileImage: user.profileImage,
+            role: user.Role.name,
         };
         const response = {
             accessToken: token,
@@ -345,7 +354,9 @@ exports.getUser = async (req, res) => {
 exports.getAllUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { firstName, lastName, mobile, email, page, pageSize, skip, take, startDate, endDate, isActive, search } = req.query;
+        // const { firstName, lastName, mobile, email, page, pageSize, skip, take, startDate, endDate, isActive, search } = req.query;
+        const { firstName, lastName, mobile, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
+
         const dateFormat = 'YYYY-MM-DD';
         const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
         const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
@@ -353,8 +364,8 @@ exports.getAllUser = async (req, res) => {
         const pageSizes = parseInt(pageSize, 10) || 10;
 
         // Ensure 'skip' and 'take' are integers and provide defaults
-        const skipRecords = parseInt(skip, 10) || 0;
-        const takeRecords = parseInt(take, 10) || 100;
+        // const skipRecords = parseInt(skip, 10) || 0;
+        // const takeRecords = parseInt(take, 10) || 100;
 
         let whereCondition = {
             deletedAt: null,

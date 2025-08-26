@@ -12,7 +12,7 @@ module.exports = {
                     type: '1',
                     level: '1',
                     status: '1',
-                    forWhom: 'Master',
+                    forWhom: 'CRM Main Admin',
                     createdAt: '2024-08-31 14:48:59',
                 },
             ],

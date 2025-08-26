@@ -381,6 +381,9 @@ exports.getAllUser = async (req, res) => {
             whereCondition.email = {
                 [Op.ne]: process.env.EMAIL,
             };
+            whereCondition.id = {
+                [Op.ne]: req.user.id,
+            };
             whereCondition.tenantId = req.user.tenantId;
         }
 
@@ -441,6 +444,13 @@ exports.getAllUser = async (req, res) => {
             where: {
                 ...whereCondition,
             },
+            include: [
+                {
+                    model: db.Role,
+                    as: 'Role',
+                    attributes: ['name'],
+                },
+            ],
             disableTenantCheck: true,
             order: [['createdAt', 'DESC']],
             limit: pageSizes,

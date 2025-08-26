@@ -269,7 +269,7 @@ exports.findAllRoute = async (req, res) => {
                     required: false,
                     include: [
                         {
-                            model: db.MenuOrderTenant,
+                            model: db.MenuOrderRole,
                             as: 'MenuOrderTenant',
                             attributes: ['level'],
                             required: false,
@@ -280,7 +280,7 @@ exports.findAllRoute = async (req, res) => {
             ],
         });
 
-        const menuOrderTenant = await db.MenuOrderTenant.findAll({
+        const menuOrderTenant = await db.MenuOrderRole.findAll({
             attributes: [],
             where: whereCondition,
             include,
@@ -884,28 +884,5 @@ exports.deleteModule = async (req, res) => {
         return res.status(status.OK).json({ message: 'Module deleted successfully.' });
     } catch (err) {
         return common.throwException(err, 'Delete Menu Order For Module', req, res);
-    }
-};
-
-exports.insertall = async (req, res) => {
-    try {
-        
-        let data = await db.MenuOrder.findAll({ attributes: ['id'] });
-
-        // console.log(data[0].dataValues.id);
-        data.map(async(d)=>{
-            let menuOrderpayload={
-                menuOrderId:d.dataValues.id,
-                roleId:"6cff3d9f-02d8-11ef-8c8d-74563c332520"
-            }
-            // console.log(d.dataValues.id);
-            await db.MenuOrderRole.create(menuOrderpayload);
-        })
-
-        return res.status(status.OK).json({ messages: 'success' });
-
-        // let insert=await db.MenuOrderRole.create
-    } catch (err) {
-        return common.throwException(err, 'Update menu order Status for module', req, res);
     }
 };

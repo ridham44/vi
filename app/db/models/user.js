@@ -127,7 +127,6 @@ module.exports = (sequelize, Sequelize) => {
         },
         {
             tableName: 'user',
-            indexes: [{ unique: true, fields: ['email'] }],
             customOptions: {
                 createdBy: { value: true },
                 updatedBy: { value: true },

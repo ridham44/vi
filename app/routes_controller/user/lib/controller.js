@@ -22,6 +22,13 @@ exports.userLogin = async (req, res) => {
                 status: enums.Status.Active.value,
             },
             disableTenantCheck: true,
+            include: [
+                {
+                    model: db.Role,
+                    as: 'Role',
+                    attributes: ['name'],
+                },
+            ],
             transaction,
         });
 
@@ -40,6 +47,7 @@ exports.userLogin = async (req, res) => {
             id: user.id,
             firstName: user.firstName,
             email: user.email,
+            type: user.Role.name,
         };
         const token = await jwt.sign(tokenPayload, process.env.JWT_SECRET_API, { expiresIn: process.env.TOKEN_EXPIRE_MIN });
         const userData = {
@@ -48,6 +56,7 @@ exports.userLogin = async (req, res) => {
             mobile: user.mobile,
             email: user.email,
             profileImage: user.profileImage,
+            role: user.Role.name,
         };
         const response = {
             accessToken: token,
@@ -81,7 +90,9 @@ exports.changePassword = async (req, res) => {
             where: {
                 id: req.user.id,
                 deletedAt: null,
+                tenantId: req.user.tenantId,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -134,7 +145,9 @@ exports.createUser = async (req, res) => {
             where: {
                 email,
                 deletedAt: null,
+                tenantId: req.user.tenantId,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -173,9 +186,11 @@ exports.updateStatus = async (req, res) => {
 
         const checkExist = await User.findOne({
             where: {
-                id,
+                id: id,
                 deletedAt: null,
+                tenantId: req.user.tenantId,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -346,7 +361,7 @@ exports.getUser = async (req, res) => {
 exports.getAllUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { firstName, lastName, mobile, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
+        const { firstName, lastName, mobile, email, page, pageSize, skip, take, startDate, endDate, isActive, search } = req.query;
         const dateFormat = 'YYYY-MM-DD';
         const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
         const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
@@ -361,6 +376,13 @@ exports.getAllUser = async (req, res) => {
             tenantId: req.user.tenantId,
             deletedAt: null,
         };
+        if (req.user.type != 'CRM Main Admin') {
+            whereCondition.tenantId = req.user.tenantId;
+            whereCondition.email = {
+                [Op.ne]: process.env.EMAIL,
+            };
+            whereCondition.tenantId = req.user.tenantId;
+        }
 
         if (startDate && endDate) {
             whereCondition.createdAt = {

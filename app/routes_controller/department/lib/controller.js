@@ -2,7 +2,7 @@ require('dotenv').config();
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
-const { status, common } = require('../../../../utils');
+const { status, common, enums } = require('../../../../utils');
 
 exports.createDepartment = async (req, res) => {
     const transaction = await db.sequelize.transaction();

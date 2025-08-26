@@ -116,7 +116,7 @@ exports.create = async (req, res) => {
 exports.findAll = async (req, res) => {
     try {
         const results = await db.MenuOrderRole.findAll({
-            attributes:[],
+            attributes: [],
             where: {
                 roleId: req.user.roleId,
             },
@@ -129,6 +129,88 @@ exports.findAll = async (req, res) => {
                         status: enums.Status.Active.value,
                         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
                     },
+                },
+            ],
+        });
+
+        // let results = await db.MenuOrder.findAll({
+        //     where: {
+        //         status: enums.Status.Active.value,
+        //         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+        //     },
+        // });
+        return res.status(status.OK).json({ data: results });
+    } catch (err) {
+        return common.throwException(err, 'Get Menu Order', req, res);
+    }
+};
+
+exports.findAllRoute = async (req, res) => {
+    try {
+        console.log(req.user.type);
+
+        // const results = await db.MenuOrderRole.findAll({
+        //     attributes: [],
+        //     where: {
+        //         roleId: req.user.roleId,
+        //     },
+        //     disableTenantCheck: true,
+        //     include: [
+        //         {
+        //             model: db.MenuOrder,
+        //             as: 'MenuOrder',
+        //             where: {
+        //                 status: enums.Status.Active.value,
+        //                 [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+        //                 deletedAt: null,
+        //                 parentId: null,
+        //                 type: enums.MenuOrderType.Group,
+        //             },
+        //             include: [
+        //                 {
+        //                     model: db.MenuOrder,
+        //                     as: 'MenuOrder',
+        //                     where: {
+        //                         type: enums.MenuOrderType.Module,
+        //                         status: enums.Status.Active.value,
+        //                         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+        //                         deletedAt: null,
+        //                     },
+        //                 },
+        //             ],
+        //         },
+        //     ],
+        // });
+
+        const results = await db.MenuOrderRole.findAll({
+            where: {
+                roleId: req.user.roleId,
+            },
+            include: [
+                {
+                    model: db.MenuOrder,
+                    as: 'MenuOrder',
+                    where: {
+                        parentId: null,
+                        type: enums.MenuOrderType.Group,
+                        status: enums.Status.Active.value,
+                        deletedAt: null,
+                        [Op.or]: [{ forWhom: 'CRM Main Admin' }, { forWhom: 'Both' }],
+                    },
+                    required: true,
+                    include: [
+                        {
+                            model: db.MenuOrder,
+                            as: 'MenuOrder',
+                            required: false,
+                            where: {
+                                type: enums.MenuOrderType.Module,
+                                status: enums.Status.Active.value,
+                                deletedAt: null,
+                                [Op.or]: [{ forWhom: 'CRM Main Admin' }, { forWhom: 'Both' }],
+                            },
+                        },
+                    ],
                 },
             ],
         });
@@ -239,109 +321,109 @@ exports.findAll = async (req, res) => {
 //     }
 // };
 
-exports.findAllRoute = async (req, res) => {
-    try {
-        const include = [];
-        let whereCondition = {
-            tenantId: req.user.tenantId,
-            status: enums.Status.Active.value,
-            [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
-        };
-        include.push({
-            model: db.MenuOrder,
-            as: 'MenuOrder',
-            // attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key', 'languageKeyId'],
-            attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key'],
+// exports.findAllRoute = async (req, res) => {
+//     try {
+//         const include = [];
+//         let whereCondition = {
+//             tenantId: req.user.tenantId,
+//             status: enums.Status.Active.value,
+//             [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+//         };
+//         include.push({
+//             model: db.MenuOrder,
+//             as: 'MenuOrder',
+//             // attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key', 'languageKeyId'],
+//             attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key'],
 
-            where: {
-                deletedAt: null,
-                parentId: null,
-                type: enums.MenuOrderType.Group,
-            },
-            include: [
-                {
-                    model: db.MenuOrder,
-                    as: 'MenuOrder',
-                    // attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key', 'languageKeyId'],
-                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key'],
+//             where: {
+//                 deletedAt: null,
+//                 parentId: null,
+//                 type: enums.MenuOrderType.Group,
+//             },
+//             include: [
+//                 {
+//                     model: db.MenuOrder,
+//                     as: 'MenuOrder',
+//                     // attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key', 'languageKeyId'],
+//                     attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key'],
 
-                    where: { deletedAt: null, type: enums.MenuOrderType.Module },
-                    required: false,
-                    include: [
-                        {
-                            model: db.MenuOrderRole,
-                            as: 'MenuOrderTenant',
-                            attributes: ['level'],
-                            required: false,
-                            where: { tenantId: req.user.tenantId },
-                        },
-                    ],
-                },
-            ],
-        });
+//                     where: { deletedAt: null, type: enums.MenuOrderType.Module },
+//                     required: false,
+//                     include: [
+//                         {
+//                             model: db.MenuOrderRole,
+//                             as: 'MenuOrderTenant',
+//                             attributes: ['level'],
+//                             required: false,
+//                             where: { roleId: req.user.roleId },
+//                         },
+//                     ],
+//                 },
+//             ],
+//         });
 
-        const menuOrderTenant = await db.MenuOrderRole.findAll({
-            attributes: [],
-            where: whereCondition,
-            include,
-            order: [['level', 'ASC']],
-            disableTenantCheck: true,
-        });
+//         const menuOrderTenant = await db.MenuOrderRole.findAll({
+//             attributes: [],
+//             where: whereCondition,
+//             include,
+//             order: [['level', 'ASC']],
+//             disableTenantCheck: true,
+//         });
 
-        // const languageValues = await db.LanguageValue.findAll({
-        //     attributes: ['id', 'keyId', 'value'],
-        //     where: { tenantId: req.user.tenantId },
-        //     disableTenantCheck: true,
-        // });
+//         // const languageValues = await db.LanguageValue.findAll({
+//         //     attributes: ['id', 'keyId', 'value'],
+//         //     where: { tenantId: req.user.tenantId },
+//         //     disableTenantCheck: true,
+//         // });
 
-        // const langMap = Object.fromEntries(languageValues.map((l) => [l.keyId, l.value]));
+//         // const langMap = Object.fromEntries(languageValues.map((l) => [l.keyId, l.value]));
 
-        // Flatten and sort data
-        const flattenedData = menuOrderTenant
-            .map((item) => {
-                if (item.MenuOrder) {
-                    // Sort MenuOrder submenus based on level
-                    if (Array.isArray(item.MenuOrder.MenuOrder)) {
-                        item.MenuOrder.MenuOrder.sort((a, b) => {
-                            const levelA = a.MenuOrderTenant?.[0]?.level || 0;
-                            const levelB = b.MenuOrderTenant?.[0]?.level || 0;
-                            return levelA - levelB;
-                        });
-                    }
+//         // Flatten and sort data
+//         const flattenedData = menuOrderTenant
+//             .map((item) => {
+//                 if (item.MenuOrder) {
+//                     // Sort MenuOrder submenus based on level
+//                     if (Array.isArray(item.MenuOrder.MenuOrder)) {
+//                         item.MenuOrder.MenuOrder.sort((a, b) => {
+//                             const levelA = a.MenuOrderTenant?.[0]?.level || 0;
+//                             const levelB = b.MenuOrderTenant?.[0]?.level || 0;
+//                             return levelA - levelB;
+//                         });
+//                     }
 
-                    // Convert MenuOrder Sequelize object to plain JS object
-                    const menuPlain = item.MenuOrder.get({ plain: true });
+//                     // Convert MenuOrder Sequelize object to plain JS object
+//                     const menuPlain = item.MenuOrder.get({ plain: true });
 
-                    // Translate main menu name
-                    // const translatedName = langMap[menuPlain.languageKeyId] || menuPlain.name;
-                    const translatedName = menuPlain.name;
+//                     // Translate main menu name
+//                     // const translatedName = langMap[menuPlain.languageKeyId] || menuPlain.name;
+//                     const translatedName = menuPlain.name;
 
-                    return {
-                        ...menuPlain,
-                        name: translatedName,
-                        MenuOrder:
-                            item.MenuOrder.MenuOrder?.map((subMenu) => {
-                                // eslint-disable-next-line no-unused-vars
-                                const { MenuOrderTenant, ...rest } = subMenu.get({ plain: true });
-                                return {
-                                    ...rest,
-                                    // name: langMap[rest.languageKeyId] || rest.name,
-                                    name: rest.name,
-                                };
-                            }) || [],
-                    };
-                }
-                return null;
-            })
-            .filter((item) => item !== null);
+//                     return {
+//                         ...menuPlain,
+//                         name: translatedName,
+//                         MenuOrder:
+//                             item.MenuOrder.MenuOrder?.map((subMenu) => {
+//                                 // eslint-disable-next-line no-unused-vars
+//                                 const { MenuOrderTenant, ...rest } = subMenu.get({ plain: true });
+//                                 return {
+//                                     ...rest,
+//                                     // name: langMap[rest.languageKeyId] || rest.name,
+//                                     name: rest.name,
+//                                 };
+//                             }) || [],
+//                     };
+//                 }
+//                 return null;
+//             })
+//             .filter((item) => item !== null);
 
-        return res.status(status.OK).json({ data: flattenedData });
-    } catch (err) {
-        console.log(err);
+//         return res.status(status.OK).json({ data: flattenedData });
+//     } catch (err) {
+//         console.log(err);
 
-        return common.throwException(err, 'Get Menu Order', req, res);
-    }
-};
+//         return common.throwException(err, 'Get Menu Order', req, res);
+//     }
+// };
 
 // find by id
 /* exports.findById = async (req, res) => {

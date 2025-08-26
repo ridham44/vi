@@ -31,6 +31,7 @@ exports.createRole = async (req, res) => {
             isSystemAdmin,
             isAdmin,
             createdBy: req.user.id,
+            tenantId: req.user.tenantId,
         };
         let role = await db.Role.create(payload, { transaction });
 

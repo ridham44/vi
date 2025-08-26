@@ -318,6 +318,7 @@ exports.getUser = async (req, res) => {
                 status: enums.Status.Active.value,
                 deletedAt: null,
             },
+            disableTenantCheck: true,
             transaction,
         });
 

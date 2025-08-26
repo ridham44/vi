@@ -35,6 +35,11 @@ module.exports = {
                 defaultValue: '1',
                 comment: '0 for InActive, 1 for Active',
             },
+            forWhom: {
+                type: Sequelize.ENUM('Master', 'Tenant', 'Both'),
+                allowNull: false,
+                defaultValue: 'Both',
+            },
             key: {
                 type: Sequelize.STRING(100),
                 allowNull: true,

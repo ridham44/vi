@@ -1,7 +1,7 @@
 'use strict';
 module.exports = (sequelize, Sequelize) => {
-    const MenuOrderTenant = sequelize.define(
-        'MenuOrderTenant',
+    const MenuOrderRole = sequelize.define(
+        'MenuOrderRole',
         {
             id: {
                 type: Sequelize.UUID,
@@ -9,16 +9,16 @@ module.exports = (sequelize, Sequelize) => {
                 allowNull: false,
                 defaultValue: Sequelize.UUIDV4,
             },
-            tenantId: {
+            roleId: {
                 type: Sequelize.UUID,
                 allowNull: false,
                 association: {
-                    model: 'Tenant',
+                    model: 'Role',
                     key: 'id',
                     onUpdate: 'CASCADE',
                     onDelete: 'RESTRICT',
-                    belongsToAlias: 'Tenant',
-                    hasManyAlias: 'MenuOrderTenant',
+                    belongsToAlias: 'Role',
+                    hasManyAlias: 'MenuOrderRole',
                 },
             },
             menuOrderId: {
@@ -30,17 +30,12 @@ module.exports = (sequelize, Sequelize) => {
                     onUpdate: 'CASCADE',
                     onDelete: 'CASCADE',
                     belongsToAlias: 'MenuOrder',
-                    hasManyAlias: 'MenuOrderTenant',
+                    hasManyAlias: 'MenuOrderRole',
                 },
             },
             level: {
                 type: Sequelize.INTEGER,
                 allowNull: true,
-            },
-            forWhom: {
-                type: Sequelize.ENUM('Tenant', 'Master', 'Both'),
-                allowNull: false,
-                defaultValue: 'Both',
             },
             status: {
                 type: Sequelize.ENUM('0', '1'),
@@ -59,11 +54,10 @@ module.exports = (sequelize, Sequelize) => {
             },
         },
         {
-            tableName: 'menu_order_tenant',
+            tableName: 'menu_order_role',
         }
     );
 
-    MenuOrderTenant.hasTenantCondition();
 
-    return MenuOrderTenant;
+    return MenuOrderRole;
 };

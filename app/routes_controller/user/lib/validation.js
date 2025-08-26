@@ -1,8 +1,8 @@
 const { body } = require('express-validator');
 const db = require('../../../db/models');
-const { Op } = require('sequelize');
+//const { Op } = require('sequelize');
 const User = db.User;
-const Role = db.Role;
+//const Role = db.Role;
 
 const loginRules = () => {
     return [

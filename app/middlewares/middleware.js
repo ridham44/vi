@@ -24,7 +24,7 @@ const authenticateUser = async (req, res, next) => {
                 {
                     model: db.Role,
                     as: 'Role',
-                    attributes: ['id', 'name', 'isSystemAdmin', 'isAdmin', 'isMasterAdmin', 'level'],
+                    attributes: ['id', 'name', 'isSystemAdmin', 'isAdmin', 'isMasterAdmin'],
                     where: {
                         status: '1',
                         deletedAt: null,
@@ -60,7 +60,7 @@ const authenticateUser = async (req, res, next) => {
         // let namespace = getNamespace(config.clsNamespace);
 
         return next();
-    } catch (err) {        
+    } catch (err) {
         return res.status(status.Unauthorized).json({ message: 'Unauthorized access.' });
     }
 };

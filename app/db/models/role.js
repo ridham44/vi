@@ -35,10 +35,6 @@ module.exports = (sequelize, Sequelize) => {
             },
             description: {
                 type: Sequelize.TEXT,
-                allowNull: false,
-            },
-            level: {
-                type: Sequelize.INTEGER,
                 allowNull: true,
             },
             status: {
@@ -49,7 +45,7 @@ module.exports = (sequelize, Sequelize) => {
             },
             tenantId: {
                 type: Sequelize.UUID,
-                allowNull: false,
+                allowNull: true,
                 association: {
                     model: 'Tenant',
                     key: 'id',
@@ -73,11 +69,11 @@ module.exports = (sequelize, Sequelize) => {
         },
         {
             tableName: 'role',
-            customOptions: {
-                createdBy: { value: true },
-                updatedBy: { value: true },
-                deletedBy: { value: true },
-            },
+            // customOptions: {
+            //     createdBy: { value: true },
+            //     updatedBy: { value: true },
+            //     deletedBy: { value: true },
+            // },
             defaultScope: {
                 where: {
                     deletedAt: null,

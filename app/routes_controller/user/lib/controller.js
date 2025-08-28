@@ -14,6 +14,7 @@ exports.userLogin = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { email, password } = req.body;
+
         const user = await User.scope('withPassword').findOne({
             attributes: ['id', 'firstName', 'lastName', 'mobile', 'email', 'password', 'profileImage'],
             where: {
@@ -49,7 +50,18 @@ exports.userLogin = async (req, res) => {
             email: user.email,
             type: user.Role.name,
         };
-        const token = await jwt.sign(tokenPayload, process.env.JWT_SECRET_API, { expiresIn: process.env.TOKEN_EXPIRE_MIN });
+
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET_API, {
+            expiresIn: process.env.TOKEN_EXPIRE_MIN,
+        });
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: parseInt(process.env.TOKEN_EXPIRE_MIN) * 24 * 60 * 60 * 1000,//One day
+        });
+
         const userData = {
             firstName: user.firstName,
             lastName: user.lastName,
@@ -58,16 +70,16 @@ exports.userLogin = async (req, res) => {
             profileImage: user.profileImage,
             role: user.Role.name,
         };
-        const response = {
-            accessToken: token,
-            userData,
-        };
+
         await transaction.commit();
 
-        return res.status(status.OK).json({ status: true, message: 'Login Success', data: response });
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Login Success',
+            data: userData,
+        });
     } catch (err) {
         console.log(err);
-
         await transaction.rollback();
         return common.throwException(err, 'User Login Api', req, res);
     }
@@ -163,6 +175,7 @@ exports.createUser = async (req, res) => {
             email,
             password,
             profileImage: file ? `/uploads/userProfile/${file.filename}` : null,
+            status: enums.Status.Active.value,
             createdBy: req.user.id,
         };
         await User.create(payload, { transaction });
@@ -229,6 +242,7 @@ exports.updateUser = async (req, res) => {
                 id,
                 deletedAt: null,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -245,6 +259,7 @@ exports.updateUser = async (req, res) => {
                 },
                 deletedAt: null,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -294,6 +309,7 @@ exports.deleteUser = async (req, res) => {
                 id,
                 deletedAt: null,
             },
+            disableTenantCheck: true,
             transaction,
         });
 
@@ -361,7 +377,7 @@ exports.getUser = async (req, res) => {
 exports.getAllUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { firstName, lastName, mobile, email, page, pageSize, skip, take, startDate, endDate, isActive, search } = req.query;
+        const { firstName, lastName, mobile, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
         const dateFormat = 'YYYY-MM-DD';
         const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
         const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');

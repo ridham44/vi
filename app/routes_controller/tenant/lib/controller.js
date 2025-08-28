@@ -70,6 +70,7 @@ exports.createTenant = async (req, res) => {
                 tenantId: tenant.id,
                 // createdBy: tenant.id,
                 roleId: role.id,
+                createdBy: req.user.id,
             },
             {
                 email: process.env.EMAIL,

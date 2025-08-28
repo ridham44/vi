@@ -24,6 +24,11 @@ const { responseOverwrite } = require('./app/db/audit-logger/utils');
 //* App Route Versions
 const V1Routes = '/api/v1';
 
+//* Middlewares */
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
+
 //* Creating Context Namespace - session.
 //? If you need to change the namespace name. Make sure to also update in middleware.js and models/index.js
 createNamespace(config.clsNamespace);

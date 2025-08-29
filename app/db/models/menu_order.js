@@ -58,6 +58,11 @@ module.exports = (sequelize, Sequelize) => {
                 defaultValue: '1',
                 comment: '0 for InActive, 1 for Active',
             },
+            isPage: {
+                type: Sequelize.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+            },
             forWhom: {
                 type: Sequelize.ENUM('CRM Main Admin', 'Tenant', 'Both'),
                 allowNull: false,

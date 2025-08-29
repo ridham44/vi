@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const auth = require('../../middlewares/middleware');
-// const authPermission = require('../../middlewares/permission.middleware');
+const authPermission = require('../../middlewares/permission.middleware');
 const controller = require('./lib/controller');
-// const { validationUpdateLevelRules } = require('./lib/validation');
-// const { expressValidate } = require('../../../utils/lib/common-function');
-// const { modules } = require('../../../utils');
+const { validationRules } = require('./lib/validation');
+const { expressValidate } = require('../../../utils/lib/common-function');
+const { modules } = require('../../../utils');
 
 // get all menu-order
 router.get('/menu-order', auth, controller.findAll);
@@ -20,13 +20,13 @@ router.get('/menu', auth, controller.insertall);
 // router.get('/menu-order/:id', auth, authPermission([modules.settings_menu_order]), controller.findById);
 
 // create menu-order
-// router.post('/menu-order', auth, authPermission([modules.settings_menu_order]), validationRules(), expressValidate, controller.create);
+router.post('/menu-order', auth, authPermission([modules.add_menu_order]), validationRules(), expressValidate, controller.create);
 
 // update menu-order
-// router.put('/menu-order/:id', auth, authPermission([modules.settings_manage_menu]), validationRules(), expressValidate, controller.update);
+router.put('/menu-order/:id', auth, authPermission([modules.settings_manage_menu]), validationRules(), expressValidate, controller.update);
 
 // update menu-order status
-// router.put('/menu-order/status/:id', auth, authPermission([modules.settings_manage_menu]), controller.updateStatus);
+router.put('/menu-order/status/:id', auth, authPermission([modules.settings_manage_menu]), controller.updateStatus);
 
 // delete menu-order
 // router.delete('/menu-order/:id', auth, authPermission([modules.settings_manage_menu]), controller.delete);

@@ -2,17 +2,38 @@ require('dotenv').config();
 const { Sequelize, fn, literal } = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
-const { status, common,} = require('../../../../utils');
-// const bcrypt = require('bcryptjs');
-// const moment = require('moment-timezone');
-// const jwt = require('jsonwebtoken');
-// const path = require('path');
-// const fs = require('fs');
+const { status, common } = require('../../../../utils');
 
 exports.inboundCall = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         console.log('type', req.user.type);
+        const { fromDate, toDate, callType, agentId, simNumber } = req.body;
+
+        const whereClause = {
+            tenantId: req.user.tenantId,
+        };
+
+        if (fromDate && toDate) {
+            whereClause.callStartTime = {
+                [Op.between]: [new Date(fromDate), new Date(toDate)],
+            };
+        }
+
+        if (callType) {
+            whereClause.callType = callType;
+        }
+
+        // if (status) {
+        //     whereClause.status = status;
+        // }
+
+        if (agentId) {
+            whereClause.agentId = agentId;
+        }
+        if (simNumber) {
+            whereClause[Op.or] = [{ callingNumber: simNumber }, { calledNumber: simNumber }];
+        }
 
         const result = await db.CallDetails.findAll({
             attributes: [
@@ -24,9 +45,7 @@ exports.inboundCall = async (req, res) => {
                 [fn('COUNT', literal(`CASE WHEN callStatus = 'BUSY' THEN 1 END`)), 'busy'],
             ],
             group: ['callType'],
-            where: {
-                tenantId: req.user.Tenant.dataValues.id,
-            },
+            where: whereClause,
             disableTenantCheck: true,
         });
 
@@ -34,6 +53,8 @@ exports.inboundCall = async (req, res) => {
 
         return res.status(status.OK).json({ data: result });
     } catch (err) {
+        console.log(err);
+
         await transaction.rollback();
         return common.throwException(err, 'fetch Call Details  Api', req, res);
     }
@@ -41,7 +62,7 @@ exports.inboundCall = async (req, res) => {
 exports.callLogs = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { fromDate, toDate, callType, status, agentId } = req.body;
+        const { fromDate, toDate, callType, agentId } = req.body;
 
         const whereClause = {};
 
@@ -55,9 +76,9 @@ exports.callLogs = async (req, res) => {
             whereClause.callType = callType;
         }
 
-        if (status) {
-            whereClause.status = status;
-        }
+        // if (status) {
+        //     whereClause.status = status;
+        // }
 
         if (agentId) {
             whereClause.agentId = agentId;
@@ -74,6 +95,7 @@ exports.callLogs = async (req, res) => {
             data: calls,
         });
 
+        return res.status(status.OK).json({ data: calls });
     } catch (err) {
         await transaction.rollback();
         return common.throwException(err, 'fetch Call Details  Api', req, res);

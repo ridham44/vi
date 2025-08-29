@@ -100,6 +100,7 @@ module.exports = {
     settings_reminder: '62d395ad-b59c-4b1f-a082-b848a0822cee',
     settings_custom_activity: '8be57dc4-1bb9-45e8-988c-de352aece06f',
     settings_menu_order: 'b71f7012-97b3-43ba-afff-0b8a230c8c53',
+    add_menu_order: '90d80a62-83cd-11f0-a943-74d83e9d1674',
     settings_add_custom_fields: 'e2ede5d2-322a-4fa1-8f6d-ddbe2106ebe8',
     settings_manage_custom_fields: '11d8ff5f-a762-411c-8233-a443735a501e',
     settings_add_template: '79e953e3-3e04-4434-b5f7-4d408d1a6ff7',

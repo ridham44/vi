@@ -21,41 +21,46 @@ exports.create = async (req, res) => {
             name: req.body.name,
             url: req.body.url,
             icon: req.body.icon,
+            type: req.body.type,
             subMenu: req.body.subMenu,
+            isPage: req.body.isPage,
             level: newLevel,
             key: req.body.key,
             createdBy: req.user.id,
         };
-        const createMenu = await db.MenuOrder.create(menuOrderData, { transaction });
-
-        let displayContentForCreateMenuOrder = '<span>Menu Order Created with the following details:</span><br>';
-
-        for (const key of Object.keys(menuOrderData)) {
-            if (menuOrderData[key] !== null && menuOrderData[key] !== undefined && key !== 'createdBy' && key !== 'level') {
-                if (key === 'name') {
-                    displayContentForCreateMenuOrder += `<span>${'Menu'}:<b>${menuOrderData[key]}</b></span><br>`;
-                } else if (key === 'subMenu') {
-                    displayContentForCreateMenuOrder += `<span>${'Sub Menu'}:<b>${menuOrderData[key]}</b></span><br>`;
-                } else if (key === 'url') {
-                    displayContentForCreateMenuOrder += `<span>${'Url'}:<b>${menuOrderData[key]}</b></span><br>`;
-                } else {
-                    displayContentForCreateMenuOrder += `<span>${key}:<b>${menuOrderData[key]}</b></span><br>`;
-                }
-            }
+        if (req.body.parentId) {
+            menuOrderData.parentId = req.body.parentId;
         }
+        await db.MenuOrder.create(menuOrderData, { transaction });
 
-        const logTableData = {
-            tableName: 'menu_order',
-            tableId: createMenu.id,
-            action: enums.logAction.Create,
-            newData: `<div className="timeline-content">${displayContentForCreateMenuOrder}</div>`,
-            message: 'Menu Order created successfully.',
-            createdBy: req.user.id,
-            createdAt: new Date(),
-            module: 'Menu Order',
-        };
+        // let displayContentForCreateMenuOrder = '<span>Menu Order Created with the following details:</span><br>';
 
-        await addLog(logTableData, { db, transaction });
+        // for (const key of Object.keys(menuOrderData)) {
+        //     if (menuOrderData[key] !== null && menuOrderData[key] !== undefined && key !== 'createdBy' && key !== 'level') {
+        //         if (key === 'name') {
+        //             displayContentForCreateMenuOrder += `<span>${'Menu'}:<b>${menuOrderData[key]}</b></span><br>`;
+        //         } else if (key === 'subMenu') {
+        //             displayContentForCreateMenuOrder += `<span>${'Sub Menu'}:<b>${menuOrderData[key]}</b></span><br>`;
+        //         } else if (key === 'url') {
+        //             displayContentForCreateMenuOrder += `<span>${'Url'}:<b>${menuOrderData[key]}</b></span><br>`;
+        //         } else {
+        //             displayContentForCreateMenuOrder += `<span>${key}:<b>${menuOrderData[key]}</b></span><br>`;
+        //         }
+        //     }
+        // }
+
+        // const logTableData = {
+        //     tableName: 'menu_order',
+        //     tableId: createMenu.id,
+        //     action: enums.logAction.Create,
+        //     newData: `<div className="timeline-content">${displayContentForCreateMenuOrder}</div>`,
+        //     message: 'Menu Order created successfully.',
+        //     createdBy: req.user.id,
+        //     createdAt: new Date(),
+        //     module: 'Menu Order',
+        // };
+
+        // await addLog(logTableData, { db, transaction });
         await transaction.commit();
         return res.status(status.OK).json({ message: 'Menu Order created successfully.' });
     } catch (err) {
@@ -147,7 +152,6 @@ exports.findAll = async (req, res) => {
 
 exports.findAllRoute = async (req, res) => {
     try {
-        
         // const results = await db.MenuOrderRole.findAll({
         //     attributes: [],
         //     where: {
@@ -196,6 +200,8 @@ exports.findAllRoute = async (req, res) => {
                         deletedAt: null,
                         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
                     },
+                    order: [['level', 'ASC']],
+
                     required: true,
                     include: [
                         {
@@ -487,15 +493,29 @@ exports.findById = async (req, res) => {
 exports.update = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
+        // const menuOrderData = {
+        //     name: req.body.name,
+        //     url: req.body.url,
+        //     icon: req.body.icon,
+        //     subMenu: req.body.subMenu,
+        //     // key: req.body.key,
+        //     isPage: req.body.isPage,
+        //     updatedBy: req.user.id,
+        // };
+
         const menuOrderData = {
             name: req.body.name,
             url: req.body.url,
             icon: req.body.icon,
+            type: req.body.type,
             subMenu: req.body.subMenu,
-            key: req.body.key,
+            isPage: req.body.isPage,
+            // key: req.body.key,
             updatedBy: req.user.id,
         };
-
+        if (req.body.parentId) {
+            menuOrderData.parentId = req.body.parentId;
+        }
         const menuOrder = await db.MenuOrder.findOne({
             where: {
                 deletedAt: null,
@@ -508,66 +528,66 @@ exports.update = async (req, res) => {
             return res.status(status.NotFound).json({ message: 'Menu Order not found.' });
         }
 
-        const changes = [];
+        // const changes = [];
 
-        for (const [key, value] of Object.entries(menuOrderData)) {
-            if (key === 'createdBy' || key === 'updatedBy') {
-                continue;
-            }
+        // for (const [key, value] of Object.entries(menuOrderData)) {
+        //     if (key === 'createdBy' || key === 'updatedBy') {
+        //         continue;
+        //     }
 
-            let fromValue = menuOrder[key];
-            let toValue = value;
+        //     let fromValue = menuOrder[key];
+        //     let toValue = value;
 
-            if (key == 'subMenu') {
-                if (fromValue !== toValue) {
-                    const change = {
-                        field: common.coverKeyName(key),
-                        from: fromValue && fromValue !== 'false' && fromValue !== 'undefined' && fromValue !== 'NaN' ? fromValue : false, // sanitize fromValue
-                        to: toValue && toValue !== 'false' && toValue !== 'undefined' && toValue !== 'NaN' ? toValue : false, // sanitize toValue
-                    };
-                    changes.push(change);
-                }
-            }
+        //     if (key == 'subMenu') {
+        //         if (fromValue !== toValue) {
+        //             const change = {
+        //                 field: common.coverKeyName(key),
+        //                 from: fromValue && fromValue !== 'false' && fromValue !== 'undefined' && fromValue !== 'NaN' ? fromValue : false, // sanitize fromValue
+        //                 to: toValue && toValue !== 'false' && toValue !== 'undefined' && toValue !== 'NaN' ? toValue : false, // sanitize toValue
+        //             };
+        //             changes.push(change);
+        //         }
+        //     }
 
-            if (fromValue !== toValue && key !== 'subMenu') {
-                // const change = {
-                //     field: common.coverKeyName(key),
-                //     from: fromValue && fromValue !== 'false' ? fromValue : 'blank value',
-                //     to: toValue && toValue !== 'false' ? toValue : 'blank value',
-                // };
-                // changes.push(change);
-                const change = {
-                    field: common.coverKeyName(key),
-                    from:
-                        fromValue && fromValue !== 'false' && fromValue !== 'undefined' && fromValue !== 'NaN' ? fromValue : `blank value`,
-                    to: toValue && toValue !== 'false' && toValue !== 'undefined' && toValue !== 'NaN' ? toValue : `blank value`,
-                };
-                changes.push(change);
-            }
-        }
+        //     if (fromValue !== toValue && key !== 'subMenu') {
+        //         // const change = {
+        //         //     field: common.coverKeyName(key),
+        //         //     from: fromValue && fromValue !== 'false' ? fromValue : 'blank value',
+        //         //     to: toValue && toValue !== 'false' ? toValue : 'blank value',
+        //         // };
+        //         // changes.push(change);
+        //         const change = {
+        //             field: common.coverKeyName(key),
+        //             from:
+        //                 fromValue && fromValue !== 'false' && fromValue !== 'undefined' && fromValue !== 'NaN' ? fromValue : `blank value`,
+        //             to: toValue && toValue !== 'false' && toValue !== 'undefined' && toValue !== 'NaN' ? toValue : `blank value`,
+        //         };
+        //         changes.push(change);
+        //     }
+        // }
 
         menuOrder.set(menuOrderData);
 
         await menuOrder.save({ transaction });
-        if (changes.length > 0) {
-            const displayContent = changes
-                .map((change) => {
-                    return `<span className="timeline-details"><span>${change.field}</span><span> was updated </span> from <span><b>${change.from}</b></span> to <span><b>${change.to}</b></span></span>`;
-                })
-                .join('<br>');
-            const logTableData = {
-                tableName: 'menu_order',
-                tableId: menuOrder.id,
-                action: enums.logAction.Update,
-                newData: `<span>Menu Order Updated with the following details:</span><br><div className="timeline-content">${displayContent}</div>`,
-                message: 'Menu Order updated successfully.',
-                createdBy: req.user.id,
-                createdAt: new Date(),
-                module: 'Menu Order',
-            };
+        // if (changes.length > 0) {
+        //     const displayContent = changes
+        //         .map((change) => {
+        //             return `<span className="timeline-details"><span>${change.field}</span><span> was updated </span> from <span><b>${change.from}</b></span> to <span><b>${change.to}</b></span></span>`;
+        //         })
+        //         .join('<br>');
+        //     const logTableData = {
+        //         tableName: 'menu_order',
+        //         tableId: menuOrder.id,
+        //         action: enums.logAction.Update,
+        //         newData: `<span>Menu Order Updated with the following details:</span><br><div className="timeline-content">${displayContent}</div>`,
+        //         message: 'Menu Order updated successfully.',
+        //         createdBy: req.user.id,
+        //         createdAt: new Date(),
+        //         module: 'Menu Order',
+        //     };
 
-            await addLog(logTableData, { db, transaction });
-        }
+        //     await addLog(logTableData, { db, transaction });
+        // }
         await transaction.commit();
         return res.status(status.OK).json({ message: 'Menu Order updated successfully.' });
     } catch (err) {
@@ -608,52 +628,52 @@ exports.updateStatus = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         // Fetch the MenuOrderTenant record based on the ID
-        const menuOrderTenant = await db.MenuOrderTenant.findOne({
+        const menuOrder = await db.MenuOrder.findOne({
             where: {
                 id: req.params.id,
             },
         });
 
         // If the record is not found, return a 404 response
-        if (!menuOrderTenant) {
+        if (!menuOrder) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ message: 'Menu Order Tenant not found.' });
+            return res.status(status.NotFound).json({ message: 'Menu Order  not found.' });
         }
 
-        const statusLabel = menuOrderTenant.status;
+        // const statusLabel = menuOrderTenant.status;
         // Toggle the status value between '1' and '0'
-        menuOrderTenant.set({
-            status: menuOrderTenant.status === enums.Status.Active.value ? enums.Status.Inactive.value : enums.Status.Active.value,
+        menuOrder.set({
+            status: menuOrder.status === enums.Status.Active.value ? enums.Status.Inactive.value : enums.Status.Active.value,
             updatedBy: req.user.id,
         });
 
         // Save the updated status
-        await menuOrderTenant.save({ transaction });
+        await menuOrder.save({ transaction });
 
-        const logTableData = {
-            tableName: 'menu_order',
-            tableId: menuOrderTenant.id,
-            action: enums.logAction.Update,
-            newData: `<span>Menu Order Tenant Status Changed Successfully:</span><br><div className="timeline-content">${`<span className="timeline-details"><span>${'Status'}</span><span> was updated </span> from <span><b>${Object.keys(
-                enums.Status._enumMap
-            ).find((key) => enums.Status._enumMap[key] === statusLabel)}</b></span> to <span><b>${
-                statusLabel === enums.Status.Active.value
-                    ? Object.keys(enums.Status._enumMap).find((key) => enums.Status._enumMap[key] === enums.Status.Inactive.value)
-                    : Object.keys(enums.Status._enumMap).find((key) => enums.Status._enumMap[key] === enums.Status.Active.value)
-            }</b></span></span>`}</div>`,
-            message: 'Menu Order Tenant Status Changed Successfully',
-            createdBy: req.user.id,
-            createdAt: new Date(),
-            module: 'MenuOrder',
-        };
-        await addLog(logTableData, { db, transaction });
+        // const logTableData = {
+        //     tableName: 'menu_order',
+        //     tableId: menuOrderTenant.id,
+        //     action: enums.logAction.Update,
+        //     newData: `<span>Menu Order Tenant Status Changed Successfully:</span><br><div className="timeline-content">${`<span className="timeline-details"><span>${'Status'}</span><span> was updated </span> from <span><b>${Object.keys(
+        //         enums.Status._enumMap
+        //     ).find((key) => enums.Status._enumMap[key] === statusLabel)}</b></span> to <span><b>${
+        //         statusLabel === enums.Status.Active.value
+        //             ? Object.keys(enums.Status._enumMap).find((key) => enums.Status._enumMap[key] === enums.Status.Inactive.value)
+        //             : Object.keys(enums.Status._enumMap).find((key) => enums.Status._enumMap[key] === enums.Status.Active.value)
+        //     }</b></span></span>`}</div>`,
+        //     message: 'Menu Order Tenant Status Changed Successfully',
+        //     createdBy: req.user.id,
+        //     createdAt: new Date(),
+        //     module: 'MenuOrder',
+        // };
+        // await addLog(logTableData, { db, transaction });
 
         await transaction.commit();
 
         return res.status(status.OK).json({ message: 'Status updated successfully.' });
     } catch (err) {
         await transaction.rollback();
-        return common.throwException(err, 'Update Menu Order Tenant Status', req, res);
+        return common.throwException(err, 'Update Menu Order Status', req, res);
     }
 };
 

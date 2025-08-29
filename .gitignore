@@ -3,7 +3,7 @@
 package-lock.json
 .DS_Store
 /uploads
-.env
+# .env
 *.log
 /access-logs
 /webhookLogs

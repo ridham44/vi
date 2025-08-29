@@ -4,6 +4,8 @@ const validationRules = () => {
     return [
         body('name').notEmpty().trim().withMessage('Name is required.'),
         body('subMenu').notEmpty().trim().withMessage('Sub Menu is required.'),
+        body('type').notEmpty().trim().withMessage('type is required is group =1 or module =2'),
+        body('isPage').notEmpty().trim().withMessage('menuorder type is required is page Or not'),
     ];
 };
 

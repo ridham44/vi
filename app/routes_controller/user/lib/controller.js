@@ -57,9 +57,9 @@ exports.userLogin = async (req, res) => {
 
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: parseInt(process.env.TOKEN_EXPIRE_MIN) * 24 * 60 * 60 * 1000,//One day
+            secure: false,
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: parseInt(process.env.TOKEN_EXPIRE_MIN) * 24 * 60 * 60 * 1000,
         });
 
         const userData = {
@@ -83,6 +83,16 @@ exports.userLogin = async (req, res) => {
         await transaction.rollback();
         return common.throwException(err, 'User Login Api', req, res);
     }
+};
+
+exports.userLogout = (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+    });
+
+    res.status(status.OK).json({ message: 'Logged out successfully' });
 };
 
 exports.changePassword = async (req, res) => {

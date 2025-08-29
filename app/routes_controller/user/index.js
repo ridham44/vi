@@ -51,6 +51,8 @@ const uploads = multer({
 
 router.post('/login', loginRules(), expressValidate, controller.userLogin);
 
+router.post('/logout', auth, controller.userLogout);
+
 router.put('/change-password', auth, changePasswordRules(), expressValidate, controller.changePassword);
 
 router.get('/user-list', auth, controller.getAllUser);

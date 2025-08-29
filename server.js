@@ -25,9 +25,8 @@ const { responseOverwrite } = require('./app/db/audit-logger/utils');
 const V1Routes = '/api/v1';
 
 //* Middlewares */
-const cookieParser = require("cookie-parser");
+const cookieParser = require('cookie-parser');
 app.use(cookieParser());
-
 
 //* Creating Context Namespace - session.
 //? If you need to change the namespace name. Make sure to also update in middleware.js and models/index.js
@@ -57,16 +56,44 @@ app.use(morgan(':remote-addr [:date[web]] :method :url :status - :response-time 
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(bodyParser.json({ limit: '50mb' }));
 
-app.use(cors({ origin: true }));
+app.use(
+    cors({
+        origin: function (origin, callback) {
+            if (!origin) return callback(null, true);
+
+            if (/^http:\/\/localhost:\d+$/.test(origin)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error('CORS policy does not allow this origin'), false);
+        },
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+        allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    })
+);
+
+// app.use((req, res, next) => {
+//   console.log("➡️ Incoming Request:", req.method, req.url);
+//   console.log("Cookies Received:", req.headers.cookie);
+//   next();
+// });
+
+
+// Handle OPTIONS preflight requests for all routes
+app.options('*', cors());
 
 //* Overwrite the default res.json method to enable API response tracking.
 app.use(responseOverwrite);
 
-app.use(function (req, res, next) {
-    //Enabling CORS
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, contentType,Content-Type, Accept, Authorization');
+// app.use(cors({ origin: true }));
+
+
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     next();
 });
 

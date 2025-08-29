@@ -854,10 +854,10 @@ exports.findAllForModule = async (req, res) => {
 
 exports.findAllForPermission = async (req, res) => {
     try {
-        const menuOrderTenant = await db.MenuOrderTenant.findAll({
+        const menuOrderTenant = await db.MenuOrderRole.findAll({
             attributes: ['id', 'status', 'level'],
             where: {
-                tenantId: req.user.tenantId,
+                roleId: req.user.roleId,
             },
             include: [
                 {
@@ -871,6 +871,14 @@ exports.findAllForPermission = async (req, res) => {
                             attributes: ['id', 'name', 'type'],
                         },
                     ],
+                },
+                {
+                    model: db.Role,
+                    as: 'Role',
+                    attributes: [],
+                    where: {
+                        tenantId: req.user.tenantId,
+                    },
                 },
             ],
             order: [['level', 'ASC']],

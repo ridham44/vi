@@ -14,7 +14,7 @@ const authenticateUser = async (req, res, next) => {
         if (!decoded) {
             return res.status(status.Unauthorized).json({ message: 'Unauthorized access2.' });
         }
-        console.log('userID', decoded.id);
+        // console.log('userID', decoded.id);
 
         const user = await db.User.scope('withPassword').findOne({
             attributes: {
@@ -48,7 +48,7 @@ const authenticateUser = async (req, res, next) => {
                 message: 'Unauthorized access3.',
             });
         }
-        
+
         let type;
         type = decoded.type;
 

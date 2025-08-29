@@ -2,6 +2,7 @@ require('dotenv').config();
 
 // Get AuditLogger Config
 const env = process.env.NODE_ENV || 'development';
+const cookieParser = require('cookie-parser');
 const config = require(__dirname + '/app/db/audit-logger/config.json')[env];
 const express = require('express');
 // const helmet = require('helmet');
@@ -52,18 +53,24 @@ app.use(morgan(':remote-addr [:date[web]] :method :url :status - :response-time 
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(bodyParser.json({ limit: '50mb' }));
 
-app.use(cors({ origin: true }));
+app.use(
+    cors({
+        origin: ['http://localhost:5173', 'http://localhost:3000', 'http://192.168.137.1:5173'],
+        credentials: true,
+    })
+);
+app.use(cookieParser());
 
 //* Overwrite the default res.json method to enable API response tracking.
 app.use(responseOverwrite);
 
-app.use(function (req, res, next) {
-    //Enabling CORS
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, contentType,Content-Type, Accept, Authorization');
-    next();
-});
+// app.use(function (req, res, next) {
+//     //Enabling CORS
+//     res.header('Access-Control-Allow-Origin', '*');
+//     res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT');
+//     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, contentType,Content-Type, Accept, Authorization');
+//     next();
+// });
 
 //* Checks if folders exist else create folders for static files
 let folders = ['uploads'];
@@ -78,15 +85,6 @@ db.sequelize
     .authenticate()
     .then(() => {
         console.log('DB connected!');
-        // db.sequelize
-        //     .sync({ force: false, alter: true })
-        //     .then(() => {
-        //         console.log('DB Synced!');
-        //     })
-        //     .catch((err) => {
-        //         console.log(err);
-        //         console.log('DB Synced Failed!: ', err.message);
-        //     });
     })
     .catch((err) => {
         console.error('DB connection failed!', err.message);

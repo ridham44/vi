@@ -4,7 +4,9 @@ const { status } = require('../../utils');
 
 const authenticateUser = async (req, res, next) => {
     try {
-        var token = req.headers.authorization || null;
+        // var token = req.headers.authorization || null;
+        const token = req.cookies.token || null;
+
         if (!token) {
             return res.status(status.Unauthorized).json({ message: 'Unauthorized access1.' });
         }

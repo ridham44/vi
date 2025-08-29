@@ -50,6 +50,12 @@ exports.userLogin = async (req, res) => {
             type: user.Role.name,
         };
         const token = await jwt.sign(tokenPayload, process.env.JWT_SECRET_API, { expiresIn: process.env.TOKEN_EXPIRE_MIN });
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'Lax',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
         const userData = {
             firstName: user.firstName,
             lastName: user.lastName,
@@ -58,13 +64,17 @@ exports.userLogin = async (req, res) => {
             profileImage: user.profileImage,
             role: user.Role.name,
         };
-        const response = {
-            accessToken: token,
-            userData,
-        };
+        // const response = {
+        //     accessToken: token,
+        //     userData,
+        // };
         await transaction.commit();
 
-        return res.status(status.OK).json({ status: true, message: 'Login Success', data: response });
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Login Success',
+            data: userData,
+        });
     } catch (err) {
         console.log(err);
 

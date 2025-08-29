@@ -28,9 +28,19 @@ const validationUpdateLevelRules = () => {
             .withMessage('Menu Order Ids must be a valid UUID'),
     ];
 };
-
+const updateStatusRules = () => {
+    return [
+        body('status')
+            .notEmpty()
+            .trim()
+            .withMessage('Status is required.')
+            .isIn(['0', '1'])
+            .withMessage('Status must be 0 (inactive) or 1 (active).'),
+    ];
+};
 module.exports = {
     validationRules,
     validationUpdateLevelRules,
     validationModuleRules,
+    updateStatusRules,
 };

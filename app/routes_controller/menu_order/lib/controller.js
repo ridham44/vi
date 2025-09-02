@@ -152,39 +152,6 @@ exports.findAll = async (req, res) => {
 
 exports.findAllRoute = async (req, res) => {
     try {
-        // const results = await db.MenuOrderRole.findAll({
-        //     attributes: [],
-        //     where: {
-        //         roleId: req.user.roleId,
-        //     },
-        //     disableTenantCheck: true,
-        //     include: [
-        //         {
-        //             model: db.MenuOrder,
-        //             as: 'MenuOrder',
-        //             where: {
-        //                 status: enums.Status.Active.value,
-        //                 [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
-        //                 deletedAt: null,
-        //                 parentId: null,
-        //                 type: enums.MenuOrderType.Group,
-        //             },
-        //             include: [
-        //                 {
-        //                     model: db.MenuOrder,
-        //                     as: 'MenuOrder',
-        //                     where: {
-        //                         type: enums.MenuOrderType.Module,
-        //                         status: enums.Status.Active.value,
-        //                         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
-        //                         deletedAt: null,
-        //                     },
-        //                 },
-        //             ],
-        //         },
-        //     ],
-        // });
-
         const results = await db.MenuOrderRole.findAll({
             where: {
                 roleId: req.user.roleId,
@@ -232,18 +199,95 @@ exports.findAllRoute = async (req, res) => {
             ],
         });
 
-        // let results = await db.MenuOrder.findAll({
-        //     where: {
-        //         status: enums.Status.Active.value,
-        //         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
-        //     },
-        // });
         return res.status(status.OK).json({ data: results });
     } catch (err) {
         return common.throwException(err, 'Get Menu Order', req, res);
     }
 };
 
+// exports.findAllRoute = async (req, res) => {
+//     try {
+//         const parentMenus = await db.MenuOrderRole.findAll({
+//             where: {
+//                 roleId: req.user.roleId,
+//                 status: enums.Status.Active.value,
+//             },
+//             attributes: [],
+//             include: [
+//                 {
+//                     model: db.MenuOrder,
+//                     as: 'MenuOrder',
+//                     required: true,
+//                     attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level'],
+//                     where: {
+//                         parentId: null,
+//                         type: enums.MenuOrderType.Group,
+//                         status: enums.Status.Active.value,
+//                         deletedAt: null,
+//                         forWhom: {
+//                             [Op.in]: [req.user.type, 'Both'],
+//                         },
+//                     },
+//                 },
+//             ],
+//             order: [[{ model: db.MenuOrder, as: 'MenuOrder' }, 'level', 'ASC']],
+//         });
+//         const parentMenuIds = parentMenus.map((menu) => menu.MenuOrder?.id);
+//         const childMenus = await db.MenuOrderRole.findAll({
+//             where: {
+//                 roleId: req.user.roleId,
+//                 status: enums.Status.Active.value,
+//             },
+//             attributes: [],
+//             include: [
+//                 {
+//                     model: db.MenuOrder,
+//                     as: 'MenuOrder',
+//                     required: true,
+//                     attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId'],
+//                     where: {
+//                         parentId: { [Op.in]: parentMenuIds },
+//                         type: enums.MenuOrderType.Module,
+//                         status: enums.Status.Active.value,
+//                         deletedAt: null,
+//                         [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+//                     },
+//                 },
+//             ],
+//             order: [[{ model: db.MenuOrder, as: 'MenuOrder' }, 'level', 'ASC']],
+//         });
+
+//         // 3. Group children under their parentId
+//         const childMenuMap = {};
+//         childMenus.forEach((menuRole) => {
+//             const child = menuRole.MenuOrder;
+//             const parentId = child.parentId;
+
+//             if (!childMenuMap[parentId]) {
+//                 childMenuMap[parentId] = [];
+//             }
+//             childMenuMap[parentId].push(child.toJSON());
+//         });
+
+//         // Step 4: Build final result with children nested under parent
+
+//         const finalResults = parentMenus.map((menuRole) => {
+//             const parent = menuRole.MenuOrder;
+//             const parentId = parent.id;
+
+//             const children = childMenuMap[parentId] || [];
+
+//             return {
+//                 ...parent.toJSON(),
+//                 children,
+//             };
+//         });
+
+//         return res.status(status.OK).json({ data: finalResults });
+//     } catch (err) {
+//         return common.throwException(err, 'Get Menu Order', req, res);
+//     }
+// };
 // exports.findAll = async (req, res) => {
 //     try {
 //         const userInclude = [

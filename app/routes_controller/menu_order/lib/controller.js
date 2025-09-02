@@ -69,55 +69,6 @@ exports.create = async (req, res) => {
     }
 };
 
-// find all
-/* exports.findAll = async (req, res) => {
-    try {
-        const whereCondition = {};
-        const include = [
-            {
-                model: db.User, // Replace with your actual model
-                as: 'CreatedByUser',
-                attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
-            },
-            {
-                model: db.User, // Replace with your actual model
-                as: 'UpdatedByUser',
-                attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
-            },
-        ];
-
-        if (req.path.endsWith('route')) {
-            whereCondition.status = '1';
-        }
-
-        if (req.query.id && req.query.id !== 'null') {
-            whereCondition.parentId = req.query.id;
-            whereCondition.type = enums.MenuOrderType.Module;
-
-            include.push({
-                model: db.MenuOrder,
-                as: 'Parent',
-                attributes: ['id', 'name'],
-            });
-        } else {
-            whereCondition.parentId = null;
-            whereCondition.type = enums.MenuOrderType.Group;
-        }
-
-        const menuOrder = await db.MenuOrder.findAll({
-            where: {
-                deletedAt: null,
-                ...whereCondition,
-            },
-            include,
-            order: [['level', 'ASC']],
-        });
-
-        return res.status(status.OK).json({ data: menuOrder });
-    } catch (err) {
-        return common.throwException(err, 'Get Menu Order', req, res);
-    }
-}; */
 exports.findAll = async (req, res) => {
     try {
         const results = await db.MenuOrderRole.findAll({
@@ -152,298 +103,87 @@ exports.findAll = async (req, res) => {
 
 exports.findAllRoute = async (req, res) => {
     try {
-        const roleId = req.user.roleId;
-        const userType = req.user.type;
- 
-        // 1. Fetch top-level MenuOrder items (Groups)
-        const parentMenus = await db.MenuOrder.findAll({
+        const parentMenus = await db.MenuOrderRole.findAll({
             where: {
-                parentId: null,
-                type: enums.MenuOrderType.Group,
+                roleId: req.user.roleId,
                 status: enums.Status.Active.value,
-                deletedAt: null,
-                [Op.or]: [{ forWhom: userType }, { forWhom: 'Both' }],
             },
+            attributes: [],
             include: [
                 {
-                    model: db.MenuOrderRole,
-                    as: 'MenuOrderRole',
-                    attributes: [],
+                    model: db.MenuOrder,
+                    as: 'MenuOrder',
                     required: true,
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level'],
                     where: {
-                        roleId,
+                        parentId: null,
+                        type: enums.MenuOrderType.Group,
                         status: enums.Status.Active.value,
+                        deletedAt: null,
+                        forWhom: {
+                            [Op.in]: [req.user.type, 'Both'],
+                        },
                     },
                 },
             ],
-            order: [['level', 'ASC']],
+            order: [[{ model: db.MenuOrder, as: 'MenuOrder' }, 'level', 'ASC']],
         });
- 
-        const parentMenuIds = parentMenus.map((menu) => menu.id);
- 
-        // 2. Fetch children (Modules) for those parent menus
-        const childMenus = await db.MenuOrder.findAll({
+        const parentMenuIds = parentMenus.map((menu) => menu.MenuOrder?.id);
+        const childMenus = await db.MenuOrderRole.findAll({
             where: {
-                parentId: { [Op.in]: parentMenuIds },
-                type: enums.MenuOrderType.Module,
+                roleId: req.user.roleId,
                 status: enums.Status.Active.value,
-                deletedAt: null,
-                [Op.or]: [{ forWhom: userType }, { forWhom: 'Both' }],
             },
+            attributes: [],
             include: [
                 {
-                    model: db.MenuOrderRole,
-                    as: 'MenuOrderRole',
-                    attributes: [],
+                    model: db.MenuOrder,
+                    as: 'MenuOrder',
                     required: true,
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId'],
                     where: {
-                        roleId,
+                        parentId: { [Op.in]: parentMenuIds },
+                        type: enums.MenuOrderType.Module,
                         status: enums.Status.Active.value,
+                        deletedAt: null,
+                        [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
                     },
                 },
             ],
-            order: [['level', 'ASC']],
+            order: [[{ model: db.MenuOrder, as: 'MenuOrder' }, 'level', 'ASC']],
         });
  
         // 3. Group children under their parentId
         const childMenuMap = {};
-        childMenus.forEach((menu) => {
-            if (!childMenuMap[menu.parentId]) {
-                childMenuMap[menu.parentId] = [];
+        childMenus.forEach((menuRole) => {
+            const child = menuRole.MenuOrder;
+            const parentId = child.parentId;
+ 
+            if (!childMenuMap[parentId]) {
+                childMenuMap[parentId] = [];
             }
-            childMenuMap[menu.parentId].push(menu);
+            childMenuMap[parentId].push(child.toJSON());
         });
  
-        // 4. Attach children to their respective parent
-        const finalResults = parentMenus.map((parent) => {
-            const parentJson = parent.toJSON();
-            parentJson.MenuOrder = childMenuMap[parent.id] || [];
-            return parentJson;
+        // Step 4: Build final result with children nested under parent
+ 
+        const finalResults = parentMenus.map((menuRole) => {
+            const parent = menuRole.MenuOrder;
+            const parentId = parent.id;
+ 
+            const children = childMenuMap[parentId] || [];
+ 
+            return {
+                ...parent.toJSON(),
+                children,
+            };
         });
  
-        return res.status(200).json({ data: finalResults });
+        return res.status(status.OK).json({ data: finalResults });
     } catch (err) {
         return common.throwException(err, 'Get Menu Order', req, res);
     }
 };
-
-// exports.findAll = async (req, res) => {
-//     try {
-//         const userInclude = [
-//             {
-//                 model: db.User,
-//                 as: 'CreatedByUser',
-//                 attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
-//             },
-//             {
-//                 model: db.User,
-//                 as: 'UpdatedByUser',
-//                 attributes: ['id', 'firstName', 'lastName', 'fullName', 'profileImage'],
-//             },
-//         ];
-
-//         const include = [];
-//         let whereCondition = {
-//             tenantId: req.user.tenantId,
-//         };
-
-//         /* if (req.path.endsWith('route')) {
-//             whereCondition.status = '1';
-//         } */
-
-//         if (req.query.id && req.query.id !== 'null') {
-//             const parentMenu = await db.MenuOrderTenant.findOne({
-//                 attributes: ['menuOrderId'],
-//                 where: {
-//                     id: req.query.id,
-//                 },
-//             });
-
-//             if (parentMenu) {
-//                 const menuOrders = await db.MenuOrder.findAll({
-//                     attributes: ['id'],
-//                     where: {
-//                         deletedAt: null,
-//                         parentId: parentMenu.menuOrderId,
-//                         type: enums.MenuOrderType.Module,
-//                     },
-//                     raw: true,
-//                 });
-
-//                 if (menuOrders.length <= 0) {
-//                     return res.status(status.OK).json({ data: [] });
-//                 }
-
-//                 whereCondition.menuOrderId = { [Op.in]: menuOrders.map((item) => item.id) };
-//             }
-
-//             include.push({
-//                 model: db.MenuOrder,
-//                 as: 'MenuOrder',
-//                 attributes: { exclude: ['level', 'status'] },
-//                 where: {
-//                     deletedAt: null,
-//                 },
-//                 include: [
-//                     ...userInclude,
-//                     {
-//                         model: db.MenuOrder,
-//                         as: 'Parent',
-//                         attributes: ['id', 'name'],
-//                     },
-//                 ],
-//             });
-//         } else {
-//             include.push({
-//                 model: db.MenuOrder,
-//                 as: 'MenuOrder',
-//                 attributes: { exclude: ['level', 'status'] },
-//                 where: {
-//                     deletedAt: null,
-//                     parentId: null,
-//                     type: enums.MenuOrderType.Group,
-//                 },
-//                 include: [...userInclude],
-//             });
-//         }
-
-//         const menuOrderTenant = await db.MenuOrderTenant.findAll({
-//             attributes: ['id', 'status', 'level'],
-//             where: whereCondition,
-//             include,
-//             order: [['level', 'ASC']],
-//             disableTenantCheck: true,
-//         });
-
-//         return res.status(status.OK).json({ data: menuOrderTenant });
-//     } catch (err) {
-//         return common.throwException(err, 'Get Menu Order Tenant', req, res);
-//     }
-// };
-
-// exports.findAllRoute = async (req, res) => {
-//     try {
-//         const include = [];
-//         let whereCondition = {
-//             tenantId: req.user.tenantId,
-//             status: enums.Status.Active.value,
-//             [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
-//         };
-//         include.push({
-//             model: db.MenuOrder,
-//             as: 'MenuOrder',
-//             // attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key', 'languageKeyId'],
-//             attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key'],
-
-//             where: {
-//                 deletedAt: null,
-//                 parentId: null,
-//                 type: enums.MenuOrderType.Group,
-//             },
-//             include: [
-//                 {
-//                     model: db.MenuOrder,
-//                     as: 'MenuOrder',
-//                     // attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key', 'languageKeyId'],
-//                     attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'key'],
-
-//                     where: { deletedAt: null, type: enums.MenuOrderType.Module },
-//                     required: false,
-//                     include: [
-//                         {
-//                             model: db.MenuOrderRole,
-//                             as: 'MenuOrderTenant',
-//                             attributes: ['level'],
-//                             required: false,
-//                             where: { roleId: req.user.roleId },
-//                         },
-//                     ],
-//                 },
-//             ],
-//         });
-
-//         const menuOrderTenant = await db.MenuOrderRole.findAll({
-//             attributes: [],
-//             where: whereCondition,
-//             include,
-//             order: [['level', 'ASC']],
-//             disableTenantCheck: true,
-//         });
-
-//         // const languageValues = await db.LanguageValue.findAll({
-//         //     attributes: ['id', 'keyId', 'value'],
-//         //     where: { tenantId: req.user.tenantId },
-//         //     disableTenantCheck: true,
-//         // });
-
-//         // const langMap = Object.fromEntries(languageValues.map((l) => [l.keyId, l.value]));
-
-//         // Flatten and sort data
-//         const flattenedData = menuOrderTenant
-//             .map((item) => {
-//                 if (item.MenuOrder) {
-//                     // Sort MenuOrder submenus based on level
-//                     if (Array.isArray(item.MenuOrder.MenuOrder)) {
-//                         item.MenuOrder.MenuOrder.sort((a, b) => {
-//                             const levelA = a.MenuOrderTenant?.[0]?.level || 0;
-//                             const levelB = b.MenuOrderTenant?.[0]?.level || 0;
-//                             return levelA - levelB;
-//                         });
-//                     }
-
-//                     // Convert MenuOrder Sequelize object to plain JS object
-//                     const menuPlain = item.MenuOrder.get({ plain: true });
-
-//                     // Translate main menu name
-//                     // const translatedName = langMap[menuPlain.languageKeyId] || menuPlain.name;
-//                     const translatedName = menuPlain.name;
-
-//                     return {
-//                         ...menuPlain,
-//                         name: translatedName,
-//                         MenuOrder:
-//                             item.MenuOrder.MenuOrder?.map((subMenu) => {
-//                                 // eslint-disable-next-line no-unused-vars
-//                                 const { MenuOrderTenant, ...rest } = subMenu.get({ plain: true });
-//                                 return {
-//                                     ...rest,
-//                                     // name: langMap[rest.languageKeyId] || rest.name,
-//                                     name: rest.name,
-//                                 };
-//                             }) || [],
-//                     };
-//                 }
-//                 return null;
-//             })
-//             .filter((item) => item !== null);
-
-//         return res.status(status.OK).json({ data: flattenedData });
-//     } catch (err) {
-//         console.log(err);
-
-//         return common.throwException(err, 'Get Menu Order', req, res);
-//     }
-// };
-
-// find by id
-/* exports.findById = async (req, res) => {
-    try {
-        const menuOrder = await db.MenuOrder.findOne({
-            where: {
-                deletedAt: null,
-                id: req.params.id,
-                status: enums.Status.Active.value,
-            },
-        });
-        if (!menuOrder) {
-            return res.status(status.NotFound).json({ message: 'Menu Order not found.' });
-        }
-
-        return res.status(status.OK).json({ data: menuOrder });
-    } catch (err) {
-        return common.throwException(err, 'Get Menu Order By Id', req, res);
-    }
-}; */
 
 exports.findById = async (req, res) => {
     try {
@@ -494,7 +234,7 @@ exports.update = async (req, res) => {
 
         if (!menuOrder) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ message: 'Menu Order not found.',});
+            return res.status(status.NotFound).json({ message: 'Menu Order not found.' });
         }
         const menuOrderData = {
             name: req.body.name,
@@ -577,34 +317,6 @@ exports.update = async (req, res) => {
         return common.throwException(err, 'Update Menu Order', req, res);
     }
 };
-
-// update menu order status
-/* exports.updateStatus = async (req, res) => {
-    try {
-        const menuOrder = await db.MenuOrder.findOne({
-            where: {
-                deletedAt: null,
-                id: req.params.id,
-            },
-        });
-        if (!menuOrder) {
-            return res.status(status.NotFound).json({ message: 'Menu Order not found.' });
-        }
-
-        menuOrder.set({
-            status: menuOrder.status === enums.Status.Active.value ? enums.Status.Inactive.value : enums.Status.Active.value,
-            updatedBy: req.user.id,
-        });
-
-        await menuOrder.save();
-
-        return res.status(status.OK).json({
-            message: 'Status updated successfully.',
-        });
-    } catch (err) {
-        return common.throwException(err, 'Update menu order Status', req, res);
-    }
-}; */
 
 exports.updateStatus = async (req, res) => {
     const transaction = await db.sequelize.transaction();
@@ -984,7 +696,7 @@ exports.deleteModule = async (req, res) => {
 exports.insertall = async (req, res) => {
     try {
         let data = await db.MenuOrder.findAll({ attributes: ['id'] });
- 
+
         // console.log(data[0].dataValues.id);
         data.map(async (d) => {
             let menuOrderpayload = {
@@ -994,9 +706,9 @@ exports.insertall = async (req, res) => {
             // console.log(d.dataValues.id);
             await db.MenuOrderRole.create(menuOrderpayload);
         });
- 
+
         return res.status(status.OK).json({ messages: 'success' });
- 
+
         // let insert=await db.MenuOrderRole.create
     } catch (err) {
         return common.throwException(err, 'Update menu order Status for module', req, res);

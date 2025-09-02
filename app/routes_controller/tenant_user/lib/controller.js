@@ -24,7 +24,7 @@ exports.create = async (req, res) => {
                 firstName: body.firstName,
                 lastName: body.lastName,
                 mobile: body.mobile,
-                password: body.password,
+                password: `${body.firstName.toLowerCase()}@123`,
                 email: body.email,
                 roleId: body.roleId,
                 tenantId: req.user.tenantId,
@@ -59,18 +59,20 @@ exports.update = async (req, res) => {
             return res.status(status.NotFound).json({ message: 'User not found!' });
         }
 
-        const duplicate = await db.User.findOne({
-            where: {
-                id: { [Op.ne]: id },
-                email: body.email,
-            },
-            disableTenantCheck: true,
-            transaction,
-        });
+        if (body.email) {
+            const duplicate = await db.User.findOne({
+                where: {
+                    email: body.email,
+                    id: { [Op.ne]: id },
+                },
+                disableTenantCheck: true,
+                transaction,
+            });
 
-        if (duplicate) {
-            await transaction.rollback();
-            return res.status(status.Conflict).json({ message: 'Email already exists!' });
+            if (duplicate) {
+                await transaction.rollback();
+                return res.status(status.Conflict).json({ message: 'Email already exists!' });
+            }
         }
 
         user.set({
@@ -79,6 +81,7 @@ exports.update = async (req, res) => {
             mobile: body.mobile,
             email: body.email,
             roleId: body.roleId,
+            password: body.password,
             tenantId: req.user.tenantId,
             updatedBy: req.user.id,
         });
@@ -136,12 +139,17 @@ exports.delete = async (req, res) => {
 
 exports.findById = async (req, res) => {
     try {
-        const { id } = req.params; 
-        const user = await db.User.findByPk(id, {
+        const { id } = req.params;
+
+        const user = await db.User.findOne({
+            where: { tenantId: req.user.tenantId, id },
             disableTenantCheck: true,
         });
 
-        if (!user) return res.status(status.NotFound).json({ message: 'User not found!' });
+        if (!user) {
+            return res.status(status.NotFound).json({ message: 'User not found!' });
+        }
+
         return res.status(status.OK).json({ data: user });
     } catch (error) {
         return common.throwException(error, 'Find User By ID API', req, res);
@@ -150,7 +158,12 @@ exports.findById = async (req, res) => {
 
 exports.findAll = async (req, res) => {
     try {
-        const users = await db.User.findAll({ order: [['createdAt', 'DESC']] });
+        const users = await db.User.findAll({
+            where: { tenantId: req.user.tenantId, deletedAt: null },
+            order: [['createdAt', 'DESC']],
+            disableTenantCheck: true,
+        });
+
         return res.status(status.OK).json({ data: users });
     } catch (error) {
         return common.throwException(error, 'Find All Users API', req, res);

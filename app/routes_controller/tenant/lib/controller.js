@@ -8,7 +8,7 @@ const moment = require('moment-timezone');
 exports.createTenant = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { companyName, email, mycoBackendUrl, frontendUrl, menuOrders } = req.body;
+        const { companyName, email, mycoBackendUrl, frontendUrl, menuOrders, subDomain } = req.body;
 
         const checkExist = await db.Tenant.findOne({
             where: {
@@ -22,23 +22,12 @@ exports.createTenant = async (req, res) => {
             await transaction.rollback();
             return res.status(status.Conflict).json({ status: false, message: 'Tenant already exists!' });
         }
-        // const checkEmailExist = await db.User.findOne({
-        //     where: {
-        //         email,
-        //         deletedAt: null,
-        //     },
-        //     transaction,
-        // });
-
-        // if (checkEmailExist) {
-        //     await transaction.rollback();
-        //     return res.status(status.Conflict).json({ status: false, message: 'Email already exists!' });
-        // }
 
         const payload = {
             companyName,
             companyId: '1',
             mycoBackendUrl,
+            subDomain,
             frontendUrl,
             createdBy: req.user.id,
         };
@@ -62,7 +51,7 @@ exports.createTenant = async (req, res) => {
                 await db.MenuOrderRole.create(menuOrderpayload, { transaction });
             })
         );
-
+        console.log('manu order', menuOrders);
         const userpayload = [
             {
                 email,
@@ -162,23 +151,10 @@ exports.updateTenant = async (req, res) => {
             transaction,
         });
 
-        //   const checkIfEmailExist = await db.User.findOne({
-        //     where: {
-        //         email:email,
-        //         tenantId:id,
-        //         deletedAt: null,
-        //     },
-        //     disableTenantCheck: true,
-        //     transaction,
-        // });
         if (checkIfCompanyExist) {
             await transaction.rollback();
             return res.status(status.Conflict).json({ status: false, message: ' Company Name already exists !' });
         }
-        //  if (checkIfEmailExist ) {
-        //     await transaction.rollback();
-        //     return res.status(status.Conflict).json({ status: false, message: ' Email already exists !' });
-        // }
 
         const payload = {
             companyName,

@@ -41,6 +41,16 @@ app.use((req, res, next) => {
     next();
 });
 
+//For logging the time taken to process each request
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        console.log(`${req.method} ${req.originalUrl} - ${duration}ms`);
+    });
+    next();
+});
+
 //* Response Compression
 app.use(compression());
 
@@ -73,12 +83,12 @@ app.use(
     })
 );
 
+// For checking incoming request and cookies
 // app.use((req, res, next) => {
-//   console.log("➡️ Incoming Request:", req.method, req.url);
-//   console.log("Cookies Received:", req.headers.cookie);
-//   next();
+//     console.log('➡️ Incoming Request:', req.method, req.url);
+//     console.log('Cookies Received:', req.headers.cookie);
+//     next();
 // });
-
 
 // Handle OPTIONS preflight requests for all routes
 app.options('*', cors());
@@ -87,7 +97,6 @@ app.options('*', cors());
 app.use(responseOverwrite);
 
 // app.use(cors({ origin: true }));
-
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', req.headers.origin);

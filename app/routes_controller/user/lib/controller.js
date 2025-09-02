@@ -57,9 +57,10 @@ exports.userLogin = async (req, res) => {
 
         res.cookie('token', token, {
             httpOnly: true,
-            secure: false,
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            maxAge: parseInt(process.env.TOKEN_EXPIRE_MIN) * 24 * 60 * 60 * 1000,
+            secure: true,
+            //domain: ".inc1.devtunnels.ms",
+            sameSite: 'none', //.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 24 * 60 * 60 * 1000,
         });
 
         const userData = {

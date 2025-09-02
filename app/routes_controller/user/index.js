@@ -74,6 +74,5 @@ router.get('/user/:id', controller.getUser);
 router.delete('/user/:id', auth, controller.deleteUser);
 
 router.put('/user/status/:id', auth, controller.updateStatus);
-router.put('/user/status/:id', auth, controller.updateStatus);
 
 module.exports = router;

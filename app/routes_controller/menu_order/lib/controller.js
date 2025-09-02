@@ -142,43 +142,45 @@ exports.findAllRoute = async (req, res) => {
                     required: true,
                     attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId'],
                     where: {
-                        parentId: { [Op.in]: parentMenuIds },
-                        type: enums.MenuOrderType.Module,
-                        status: enums.Status.Active.value,
-                        deletedAt: null,
-                        [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }],
+                        [Op.and]: [
+                            { parentId: { [Op.in]: parentMenuIds } },
+                            { type: { [Op.or]: [enums.MenuOrderType.Module, enums.MenuOrderType.Group, enums.MenuOrderType.Right] } },
+                            { status: enums.Status.Active.value },
+                            { deletedAt: null },
+                            { [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }] },
+                        ],
                     },
                 },
             ],
             order: [[{ model: db.MenuOrder, as: 'MenuOrder' }, 'level', 'ASC']],
         });
- 
+
         // 3. Group children under their parentId
         const childMenuMap = {};
         childMenus.forEach((menuRole) => {
             const child = menuRole.MenuOrder;
             const parentId = child.parentId;
- 
+
             if (!childMenuMap[parentId]) {
                 childMenuMap[parentId] = [];
             }
             childMenuMap[parentId].push(child.toJSON());
         });
- 
+
         // Step 4: Build final result with children nested under parent
- 
+
         const finalResults = parentMenus.map((menuRole) => {
             const parent = menuRole.MenuOrder;
             const parentId = parent.id;
- 
+
             const children = childMenuMap[parentId] || [];
- 
+
             return {
                 ...parent.toJSON(),
                 children,
             };
         });
- 
+
         return res.status(status.OK).json({ data: finalResults });
     } catch (err) {
         return common.throwException(err, 'Get Menu Order', req, res);

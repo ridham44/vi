@@ -79,11 +79,6 @@ exports.userLogin = async (req, res) => {
             message: 'Login Success',
             data: userData,
         });
-        return res.status(status.OK).json({
-            status: true,
-            message: 'Login Success',
-            data: userData,
-        });
     } catch (err) {
         console.log(err);
         await transaction.rollback();

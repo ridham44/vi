@@ -1,7 +1,7 @@
 {
     "development": {
-        "username": "root",
-        "password": "Ridham44",
+        "username": "chpl",
+        "password": "Chpl@321.",
         "database": "demo_chpl",
         "host": "localhost",
         "dialect": "mysql",
@@ -9,8 +9,7 @@
         "seederStorage": "sequelize",
         "migrationStorageTableName": "SequelizeMeta",
         "seederStorageTableName": "sequelizeData",
-        "logging": false,
-        "port": 3306
+        "logging": false
     },
     "production": {
         "username": "baseapicp_basecp",

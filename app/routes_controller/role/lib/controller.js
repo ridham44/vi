@@ -284,6 +284,9 @@ exports.getAllRole = async (req, res) => {
 
         let whereCondition = {
             deletedAt: null,
+            id: {
+                [Op.ne]: req.user.roleId,
+            },
         };
         console.log(req.user.type);
 

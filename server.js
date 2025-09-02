@@ -2,7 +2,6 @@ require('dotenv').config();
 
 // Get AuditLogger Config
 const env = process.env.NODE_ENV || 'development';
-const cookieParser = require('cookie-parser');
 const config = require(__dirname + '/app/db/audit-logger/config.json')[env];
 const express = require('express');
 // const helmet = require('helmet');
@@ -92,7 +91,7 @@ app.use(
 // });
 
 // Handle OPTIONS preflight requests for all routes
-app.options('*', cors());
+app.options('http://localhost:5173/', cors());
 
 //* Overwrite the default res.json method to enable API response tracking.
 app.use(responseOverwrite);

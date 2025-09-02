@@ -17,14 +17,14 @@ module.exports = {
                 type: Sequelize.STRING,
                 allowNull: true,
             },
-            crmUserId: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            countryCode: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
+            // crmUserId: {
+            //     type: Sequelize.STRING,
+            //     allowNull: true,
+            // },
+            // countryCode: {
+            //     type: Sequelize.STRING,
+            //     allowNull: true,
+            // },
             mobile: {
                 type: Sequelize.STRING,
                 allowNull: true,
@@ -71,28 +71,28 @@ module.exports = {
                 type: Sequelize.TEXT,
                 allowNull: true,
             },
-            myOperatorUserId: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            hoduAgentId: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            fcmToken: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            isEmailVerified: {
-                type: Sequelize.ENUM('0', '1'),
-                allowNull: true,
-                defaultValue: '0',
-            },
-            isPasswordChangeRequired: {
-                type: Sequelize.BOOLEAN,
-                allowNull: true,
-                defaultValue: false,
-            },
+            // myOperatorUserId: {
+            //     type: Sequelize.STRING,
+            //     allowNull: true,
+            // },
+            // hoduAgentId: {
+            //     type: Sequelize.STRING,
+            //     allowNull: true,
+            // },
+            // fcmToken: {
+            //     type: Sequelize.STRING,
+            //     allowNull: true,
+            // },
+            // isEmailVerified: {
+            //     type: Sequelize.ENUM('0', '1'),
+            //     allowNull: true,
+            //     defaultValue: '0',
+            // },
+            // isPasswordChangeRequired: {
+            //     type: Sequelize.BOOLEAN,
+            //     allowNull: true,
+            //     defaultValue: false,
+            // },
             status: {
                 type: Sequelize.ENUM('0', '1'),
                 allowNull: true,

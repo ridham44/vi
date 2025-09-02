@@ -2,6 +2,7 @@ require('dotenv').config();
 
 // Get AuditLogger Config
 const env = process.env.NODE_ENV || 'development';
+const cookieParser = require('cookie-parser');
 const config = require(__dirname + '/app/db/audit-logger/config.json')[env];
 const express = require('express');
 // const helmet = require('helmet');
@@ -119,15 +120,6 @@ db.sequelize
     .authenticate()
     .then(() => {
         console.log('DB connected!');
-        // db.sequelize
-        //     .sync({ force: false, alter: true })
-        //     .then(() => {
-        //         console.log('DB Synced!');
-        //     })
-        //     .catch((err) => {
-        //         console.log(err);
-        //         console.log('DB Synced Failed!: ', err.message);
-        //     });
     })
     .catch((err) => {
         console.error('DB connection failed!', err.message);

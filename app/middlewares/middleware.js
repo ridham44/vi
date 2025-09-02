@@ -48,7 +48,7 @@ const authenticateUser = async (req, res, next) => {
                 message: 'Unauthorized access3.',
             });
         }
-        
+
         let type;
         type = decoded.type;
 

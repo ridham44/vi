@@ -114,7 +114,7 @@ exports.findAllRoute = async (req, res) => {
                     model: db.MenuOrder,
                     as: 'MenuOrder',
                     required: true,
-                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level'],
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'isPage'],
                     where: {
                         parentId: null,
                         type: enums.MenuOrderType.Group,
@@ -140,11 +140,11 @@ exports.findAllRoute = async (req, res) => {
                     model: db.MenuOrder,
                     as: 'MenuOrder',
                     required: true,
-                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId'],
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId', 'isPage'],
                     where: {
                         [Op.and]: [
                             { parentId: { [Op.in]: parentMenuIds } },
-                            { type: { [Op.or]: [enums.MenuOrderType.Module, enums.MenuOrderType.Group, enums.MenuOrderType.Right] } },
+                            { type: { [Op.or]: [enums.MenuOrderType.Module, enums.MenuOrderType.Group] } },
                             { status: enums.Status.Active.value },
                             { deletedAt: null },
                             { [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }] },

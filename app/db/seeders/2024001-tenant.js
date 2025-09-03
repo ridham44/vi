@@ -7,7 +7,7 @@ module.exports = {
             [
                 {
                     id: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
-                    companyId: '1',
+                    // companyId: '1',
                     companyName: 'Developer(CHPL)',
                     subDomain: 'https://dev.my-company.app/india/',
                     mycoBackendUrl: 'https://dev.my-company.app/india/crmApi',

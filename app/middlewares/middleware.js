@@ -34,7 +34,7 @@ const authenticateUser = async (req, res, next) => {
                 {
                     model: db.Tenant,
                     as: 'Tenant',
-                    attributes: ['id', 'mycoBackendUrl', 'frontendUrl', 'companyId', 'companyName'],
+                    attributes: ['id', 'mycoBackendUrl', 'frontendUrl', 'companyName'],
                     where: {
                         deletedAt: null,
                     },

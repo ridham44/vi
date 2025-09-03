@@ -4,94 +4,111 @@ const Op = Sequelize.Op;
 const db = require('../../../db/models');
 const { status, common } = require('../../../../utils');
 
-exports.createDepartment = async (req, res) => {
+exports.createPhone = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { name } = req.body;
+        const { number, departmentId, name, tenantId } = req.body;
+        console.log('tenantId', tenantId);
 
-        const checkExist = await db.Department.findOne({
+        const checkExist = await db.Phones.findOne({
             where: {
-                name: name,
+                number: number,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
             },
             transaction,
             disableTenantCheck: true,
         });
-
         if (checkExist) {
             await transaction.rollback();
-            return res.status(status.Conflict).json({ status: false, message: 'Department already exists!' });
+            return res.status(status.Conflict).json({ status: false, message: 'Number already exists!' });
+        }
+
+        const checkDepartmentExist = await db.Department.findOne({
+            where: {
+                id: departmentId,
+                deletedAt: null,
+                tenantId: tenantId,
+            },
+            transaction,
+            disableTenantCheck: true,
+        });
+        if (!checkDepartmentExist) {
+            await transaction.rollback();
+            return res.status(status.Conflict).json({ status: false, message: 'Department not exists!' });
         }
 
         const payload = {
             name: name,
-            description: req.body?.description,
-            tenantId: req.user.tenantId,
+            number: number,
+            departmentId: departmentId,
+            tenantId: tenantId,
         };
-        await db.Department.create(payload, { transaction });
+        await db.Phones.create(payload, { transaction });
 
         await transaction.commit();
 
         return res.status(status.OK).json({
             status: true,
-            message: 'Department created successfully.',
+            message: 'phone number added successfully.',
         });
     } catch (err) {
         await transaction.rollback();
-        return common.throwException(err, 'Create Department Api', req, res);
+        return common.throwException(err, 'add phone number Api', req, res);
     }
 };
 
-exports.updateDepartment = async (req, res) => {
+exports.updatePhone = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
-        const { name } = req.body;
+        const { name, number, tenantId, departmentId } = req.body;
 
-        const checkExist = await db.Department.findOne({
+        const checkExist = await db.Phones.findOne({
             where: {
                 id,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
+                number: { [Op.ne]: number },
             },
             disableTenantCheck: true,
             transaction,
         });
 
-        if (!checkExist) {
+        if (checkExist) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ status: false, message: 'Department not found' });
+            return res.status(status.NotFound).json({ status: false, message: 'phone  already exist' });
         }
 
         const payload = {
             name,
-            description: req.body?.description,
+            number,
+            tenantId,
+            departmentId,
             updatedAt: new Date(),
         };
 
-        await db.Department.update(payload, { where: { id: id }, transaction });
+        await db.Phones.update(payload, { where: { id: id }, transaction });
         await transaction.commit();
         return res.status(status.OK).json({
             status: true,
-            message: 'Department updated successfully.',
+            message: 'Phone updated successfully.',
         });
     } catch (err) {
         await transaction.rollback();
-        return common.throwException(err, 'Update Department Api', req, res);
+        return common.throwException(err, 'Update phone Api', req, res);
     }
 };
 
-exports.deleteDepartment = async (req, res) => {
+exports.deletePhone = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
 
-        const checkExist = await db.Department.findOne({
+        const checkExist = await db.Phones.findOne({
             where: {
                 id,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
             },
             disableTenantCheck: true,
             transaction,
@@ -99,7 +116,7 @@ exports.deleteDepartment = async (req, res) => {
 
         if (!checkExist) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ status: false, message: 'Department not found' });
+            return res.status(status.NotFound).json({ status: false, message: 'phone number not found' });
         }
 
         await checkExist.update(
@@ -112,11 +129,11 @@ exports.deleteDepartment = async (req, res) => {
         await transaction.commit();
         return res.status(status.OK).json({
             status: true,
-            message: 'Department deleted successfully.',
+            message: 'phone number deleted successfully.',
         });
     } catch (err) {
         await transaction.rollback();
-        return common.throwException(err, 'Delete Department Api', req, res);
+        return common.throwException(err, 'Delete phone Api', req, res);
     }
 };
 
@@ -152,7 +169,7 @@ exports.getDepartment = async (req, res) => {
     }
 };
 
-exports.getAllDepartment = async (req, res) => {
+exports.getAllPhones = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { search } = req.query;
@@ -160,7 +177,6 @@ exports.getAllDepartment = async (req, res) => {
         let whereCondition = {
             deletedAt: null,
         };
-
         if (req.query.Id) {
             whereCondition.tenantId = req.query.Id;
         } else {
@@ -169,16 +185,27 @@ exports.getAllDepartment = async (req, res) => {
         if (search) {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
-        const findAll = await db.Department.findAll({
-            attributes: ['id', 'name', 'createdAt'],
+        const findAll = await db.Phones.findAll({
+            attributes: ['id', 'name', 'number', 'createdAt'],
             where: {
                 ...whereCondition,
             },
+            include: [
+                {
+                    model: db.Department,
+                    as: 'Department',
+                    required: true,
+                    attributes: ['name'],
+                    where: {
+                        deletedAt: null,
+                    },
+                },
+            ],
             order: [['createdAt', 'DESC']],
             disableTenantCheck: true,
         });
 
-        const findCount = await db.Department.count({ where: whereCondition, disableTenantCheck: true });
+        const findCount = await db.Phones.count({ where: whereCondition, disableTenantCheck: true });
 
         if (findAll.length === 0) {
             await transaction.rollback();
@@ -200,53 +227,6 @@ exports.getAllDepartment = async (req, res) => {
         });
     } catch (err) {
         await transaction.rollback();
-        return common.throwException(err, 'Get department List Api', req, res);
-    }
-};
-exports.getAllDepartmentOption = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
-    try {
-        const { search } = req.query;
-
-        let whereCondition = {
-            deletedAt: null,
-            tenantId: req.body.tenantId,
-        };
-
-        if (search) {
-            whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
-        }
-        const findAll = await db.Department.findAll({
-            attributes: ['id', 'name', 'createdAt'],
-            where: {
-                ...whereCondition,
-            },
-            order: [['createdAt', 'DESC']],
-            disableTenantCheck: true,
-        });
-
-        const findCount = await db.Department.count({ where: whereCondition, disableTenantCheck: true });
-
-        if (findAll.length === 0) {
-            await transaction.rollback();
-            return res.status(status.OK).json({
-                status: true,
-                message: 'No data found!',
-            });
-        }
-        let response = {
-            department: findAll,
-            totalCount: findCount,
-        };
-
-        await transaction.commit();
-        return res.status(status.OK).json({
-            status: true,
-            message: 'Success.',
-            data: response,
-        });
-    } catch (err) {
-        await transaction.rollback();
-        return common.throwException(err, 'Get department List Api', req, res);
+        return common.throwException(err, 'Get phone List Api', req, res);
     }
 };

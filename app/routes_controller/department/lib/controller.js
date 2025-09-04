@@ -2,7 +2,7 @@ require('dotenv').config();
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
-const { status, common } = require('../../../../utils');
+const { status, common, dbCommon } = require('../../../../utils');
 
 exports.createDepartment = async (req, res) => {
     const transaction = await db.sequelize.transaction();
@@ -64,6 +64,21 @@ exports.updateDepartment = async (req, res) => {
             return res.status(status.NotFound).json({ status: false, message: 'Department not found' });
         }
 
+        const checkDepartmentNameExist = await db.Department.findOne({
+            where: {
+                name: name,
+                deletedAt: null,
+                tenantId: req.user.tenantId,
+            },
+            transaction,
+            disableTenantCheck: true,
+        });
+
+        if (checkDepartmentNameExist) {
+            await transaction.rollback();
+            return res.status(status.Conflict).json({ status: false, message: 'Department already exists!' });
+        }
+
         const payload = {
             name,
             description: req.body?.description,
@@ -102,6 +117,13 @@ exports.deleteDepartment = async (req, res) => {
             return res.status(status.NotFound).json({ status: false, message: 'Department not found' });
         }
 
+        let count = await dbCommon.checkAssociation(id, req.user.tenantId, 'departmentId');
+        if (count > 0) {
+            return res.status(status.BadRequest).json({
+                message: 'Cannot delete department. It is associated with other records.',
+            });
+        }
+
         await checkExist.update(
             {
                 deletedAt: new Date(),
@@ -115,6 +137,7 @@ exports.deleteDepartment = async (req, res) => {
             message: 'Department deleted successfully.',
         });
     } catch (err) {
+
         await transaction.rollback();
         return common.throwException(err, 'Delete Department Api', req, res);
     }

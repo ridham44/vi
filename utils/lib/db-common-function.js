@@ -355,4 +355,27 @@ module.exports = {
 
         return keyData;
     },
+
+    async checkAssociation(id, tenantId, column = 'departmentId') {
+        let models = Object.values(db.sequelize.models);
+        let count = 0;
+
+        for (const model of models) {
+            if (!model.rawAttributes?.[column]) continue;
+
+            const associated = await model.count({
+                where: {
+                    [column]: id,
+                    tenantId: tenantId,
+                },
+                disableTenantCheck: true,
+            });
+
+            if (associated > 0) {
+                count++;
+            }
+        }
+
+        return count;
+    },
 };

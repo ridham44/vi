@@ -117,7 +117,7 @@ exports.deleteDepartment = async (req, res) => {
             return res.status(status.NotFound).json({ status: false, message: 'Department not found' });
         }
 
-        let count = await dbCommon.checkAssociation(id, req.user.tenantId, 'departmentId');
+        let count = await dbCommon.checkAssociation(id, 'departmentId');
         if (count > 0) {
             return res.status(status.BadRequest).json({
                 message: 'Cannot delete department. It is associated with other records.',

@@ -356,7 +356,7 @@ module.exports = {
         return keyData;
     },
 
-    async checkAssociation(id, tenantId, column = 'departmentId') {
+    async checkAssociation(id, column ) {
         let models = Object.values(db.sequelize.models);
         let count = 0;
 
@@ -366,7 +366,8 @@ module.exports = {
             const associated = await model.count({
                 where: {
                     [column]: id,
-                    tenantId: tenantId,
+                    // tenantId: tenantId,
+                    deletedAt: null,
                 },
                 disableTenantCheck: true,
             });

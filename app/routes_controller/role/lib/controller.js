@@ -2,18 +2,20 @@ require('dotenv').config();
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
-const { status, common, enums } = require('../../../../utils');
+const { status, common, enums, dbCommon } = require('../../../../utils');
 const moment = require('moment-timezone');
 
 exports.createRole = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
-
-        let whereCondition = { name: name, deletedAt: null };
+        let tenantId;
         if (req.user.type != 'CRM Main Admin') {
-            whereCondition.tenantId = req.user.tenantId;
+            tenantId = req.user.tenantId;
+        } else {
+            tenantId = null;
         }
+        let whereCondition = { name: name, deletedAt: null, tenantId: tenantId };
 
         const checkExist = await db.Role.findOne({
             where: whereCondition,
@@ -31,7 +33,7 @@ exports.createRole = async (req, res) => {
             isSystemAdmin,
             isAdmin,
             createdBy: req.user.id,
-            tenantId: req.user.tenantId,
+            tenantId: tenantId,
         };
         let role = await db.Role.create(payload, { transaction });
 
@@ -40,7 +42,6 @@ exports.createRole = async (req, res) => {
                 const menuOrderpayload = {
                     menuOrderId: data,
                     roleId: role.id,
-                    tenantId: req.user.tenantId,
                 };
                 await db.MenuOrderRole.create(menuOrderpayload, { transaction });
             })
@@ -102,18 +103,24 @@ exports.updateRole = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
+        let tenantId;
+        if (req.user.type != 'CRM Main Admin') {
+            tenantId = req.user.tenantId;
+        } else {
+            tenantId = null;
+        }
         const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
 
         const checkExist = await db.Role.findOne({
             where: {
                 id,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
             },
             disableTenantCheck: true,
             transaction,
         });
-        console.log("checkExist",checkExist,"id",id,"tenantId",req.user.tenantId);
+        console.log('checkExist', checkExist, 'id', id, 'tenantId', tenantId);
         if (!checkExist) {
             await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
@@ -126,7 +133,7 @@ exports.updateRole = async (req, res) => {
                     [Op.ne]: id,
                 },
                 deletedAt: null,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
             },
             disableTenantCheck: true,
             transaction,
@@ -147,7 +154,7 @@ exports.updateRole = async (req, res) => {
                     model: db.Role,
                     as: 'Role',
                     where: {
-                        tenantId: req.user.tenantId,
+                        tenantId: tenantId,
                     },
                 },
             ],
@@ -167,7 +174,7 @@ exports.updateRole = async (req, res) => {
                 const menuOrderpayload = {
                     menuOrderId: data,
                     roleId: id,
-                    tenantId: req.user.tenantId,
+                    tenantId: tenantId,
                 };
                 await db.MenuOrderRole.create(menuOrderpayload, { transaction });
             })
@@ -181,7 +188,7 @@ exports.updateRole = async (req, res) => {
             updatedBy: req.user.id,
         };
 
-        await db.Role.update(payload, { where: { id: id }, transaction });
+        await db.Role.update(payload, { where: { id: id, tenantId: tenantId }, disableTenantCheck: true, transaction });
         await transaction.commit();
         return res.status(status.OK).json({
             status: true,
@@ -202,7 +209,6 @@ exports.deleteRole = async (req, res) => {
             where: {
                 id,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
             },
             disableTenantCheck: true,
             transaction,
@@ -212,7 +218,12 @@ exports.deleteRole = async (req, res) => {
             await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
         }
-
+        let count = await dbCommon.checkAssociation(id, 'roleId');
+        if (count > 0) {
+            return res.status(status.BadRequest).json({
+                message: 'Cannot delete Role. It is associated with other records.',
+            });
+        }
         await checkExist.update(
             {
                 deletedAt: new Date(),
@@ -236,13 +247,19 @@ exports.getRole = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
+        let tenantId;
+        if (req.user.type != 'CRM Main Admin') {
+            tenantId = req.user.tenantId;
+        } else {
+            tenantId = null;
+        }
 
         const checkExist = await db.Role.findOne({
             attributes: ['name', 'isSystemAdmin', 'isAdmin', 'description', 'status'],
             where: {
                 id: id,
                 status: enums.Status.Active.value,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
                 deletedAt: null,
             },
             disableTenantCheck: true,
@@ -282,17 +299,21 @@ exports.getAllRole = async (req, res) => {
         // const skipRecords = parseInt(skip, 10) || 0;
         // const takeRecords = parseInt(take, 10) || 100;
 
+        let tenantId;
+        if (req.user.type != 'CRM Main Admin') {
+            tenantId = req.user.tenantId;
+        } else {
+            tenantId = null;
+        }
+
         let whereCondition = {
             deletedAt: null,
+            tenantId: tenantId,
             id: {
                 [Op.ne]: req.user.roleId,
             },
         };
-        console.log(req.user.type);
 
-        if (req.user.type != 'CRM Main Admin') {
-            whereCondition.tenantId = req.user.tenantId;
-        }
         if (startDate && endDate) {
             whereCondition.createdAt = {
                 [Op.between]: [firstDate, lastDate],

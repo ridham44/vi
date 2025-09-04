@@ -52,12 +52,14 @@ module.exports = (sequelize, Sequelize) => {
                 type: Sequelize.DATE,
                 onUpdate: sequelize.literal('CURRENT_TIMESTAMP'),
             },
+            deletedAt: {
+                type: Sequelize.DATE,
+            },
         },
         {
             tableName: 'menu_order_role',
         }
     );
-
 
     return MenuOrderRole;
 };

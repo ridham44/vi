@@ -13,7 +13,7 @@ router.get('/menu-order', auth, controller.findAll);
 // router.get('/menu-order-route', auth, controller.findAllRoute);
 router.get('/menu-order-route', auth, controller.findAllRoute);
 
-router.get('/menu', controller.insertall);
+// router.get('/menu', controller.insertall);
 
 // get menu-order by Id
 // router.get('/menu-order/:id', auth, authPermission([modules.settings_menu_order]), controller.findById);

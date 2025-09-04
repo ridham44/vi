@@ -44,6 +44,8 @@ exports.userLogin = async (req, res) => {
             return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
         }
         let type;
+        console.log(user.Role.name);
+        
         if (user.Role.isMasterAdmin) {
             type = 'CRM Main Admin';
         } else {

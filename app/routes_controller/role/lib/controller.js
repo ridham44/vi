@@ -281,6 +281,8 @@ exports.getRole = async (req, res) => {
             data: checkExist,
         });
     } catch (err) {
+        console.log(err);
+        
         await transaction.rollback();
         return common.throwException(err, 'Get Role Api', req, res);
     }

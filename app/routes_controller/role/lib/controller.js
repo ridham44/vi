@@ -8,7 +8,9 @@ const moment = require('moment-timezone');
 exports.createRole = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
+        // const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
+        const { name, menuOrders } = req.body;
+
         let tenantId;
         if (req.user.type != 'CRM Main Admin') {
             tenantId = req.user.tenantId;
@@ -30,8 +32,8 @@ exports.createRole = async (req, res) => {
 
         const payload = {
             name,
-            isSystemAdmin,
-            isAdmin,
+            // isSystemAdmin,
+            // isAdmin,
             createdBy: req.user.id,
             tenantId: tenantId,
         };
@@ -109,7 +111,8 @@ exports.updateRole = async (req, res) => {
         } else {
             tenantId = null;
         }
-        const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
+        // const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
+        const { name, menuOrders } = req.body;
 
         const checkExist = await db.Role.findOne({
             where: {
@@ -181,8 +184,8 @@ exports.updateRole = async (req, res) => {
         );
         const payload = {
             name,
-            isSystemAdmin,
-            isAdmin,
+            // isSystemAdmin,
+            // isAdmin,
             description: req.body?.description,
             updatedAt: new Date(),
             updatedBy: req.user.id,
@@ -255,7 +258,7 @@ exports.getRole = async (req, res) => {
         }
 
         const checkExist = await db.Role.findOne({
-            attributes: ['name', 'isSystemAdmin', 'isAdmin', 'description', 'status'],
+            attributes: ['name', 'description', 'status'],
             where: {
                 id: id,
                 status: enums.Status.Active.value,
@@ -352,7 +355,7 @@ exports.getAllRole = async (req, res) => {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
         const findAll = await db.Role.findAll({
-            attributes: ['id', 'name', 'isSystemAdmin', 'isAdmin', 'description', 'status', 'createdAt'],
+            attributes: ['id', 'name', 'description', 'status', 'createdAt'],
             where: {
                 ...whereCondition,
             },

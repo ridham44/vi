@@ -26,7 +26,7 @@ const authenticateUser = async (req, res, next) => {
                 {
                     model: db.Role,
                     as: 'Role',
-                    attributes: ['id', 'name', 'isSystemAdmin', 'isAdmin', 'isMasterAdmin'],
+                    attributes: ['id', 'name', 'isMasterAdmin'],
                     where: {
                         status: '1',
                         deletedAt: null,

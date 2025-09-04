@@ -8,5 +8,6 @@ router.use('/', require('./tenant_user'));
 router.use('/', require('./role'));
 router.use('/', require('./tenant'));
 router.use('/', require('./packages'));
+router.use('/',require('./phones'))
 
 module.exports = router;

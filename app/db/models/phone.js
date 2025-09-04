@@ -1,7 +1,8 @@
 'use strict';
+
 module.exports = (sequelize, Sequelize) => {
-    const MenuOrderRole = sequelize.define(
-        'MenuOrderRole',
+    const Phones = sequelize.define(
+        'Phones',
         {
             id: {
                 type: Sequelize.UUID,
@@ -9,39 +10,37 @@ module.exports = (sequelize, Sequelize) => {
                 allowNull: false,
                 defaultValue: Sequelize.UUIDV4,
             },
-            roleId: {
-                type: Sequelize.UUID,
+            name: {
+                type: Sequelize.STRING(36),
                 allowNull: false,
+            },
+            number: {
+                type: Sequelize.STRING(36),
+                allowNull: false,
+            },
+            departmentId: {
+                type: Sequelize.UUID,
+                allowNull: true,
                 association: {
-                    model: 'Role',
+                    model: 'Department',
                     key: 'id',
                     onUpdate: 'CASCADE',
                     onDelete: 'RESTRICT',
-                    belongsToAlias: 'Role',
-                    hasManyAlias: 'MenuOrderRole',
+                    belongsToAlias: 'Department',
+                    hasManyAlias: 'Phones',
                 },
             },
-            menuOrderId: {
+            tenantId: {
                 type: Sequelize.UUID,
-                allowNull: false,
+                allowNull: true,
                 association: {
-                    model: 'MenuOrder',
+                    model: 'Tenant',
                     key: 'id',
                     onUpdate: 'CASCADE',
-                    onDelete: 'CASCADE',
-                    belongsToAlias: 'MenuOrder',
-                    hasManyAlias: 'MenuOrderRole',
+                    onDelete: 'RESTRICT',
+                    belongsToAlias: 'Tenant',
+                    hasManyAlias: 'Phones',
                 },
-            },
-            level: {
-                type: Sequelize.INTEGER,
-                allowNull: true,
-            },
-            status: {
-                type: Sequelize.ENUM('0', '1'),
-                allowNull: false,
-                defaultValue: '1',
-                comment: '0 for InActive, 1 for Active',
             },
             createdAt: {
                 type: Sequelize.DATE,
@@ -57,9 +56,10 @@ module.exports = (sequelize, Sequelize) => {
             },
         },
         {
-            tableName: 'menu_order_role',
+            tableName: 'phones',
         }
     );
 
-    return MenuOrderRole;
+    Phones.hasTenantCondition();
+    return Phones;
 };

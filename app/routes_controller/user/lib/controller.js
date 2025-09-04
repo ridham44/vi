@@ -27,7 +27,7 @@ exports.userLogin = async (req, res) => {
                 {
                     model: db.Role,
                     as: 'Role',
-                    attributes: ['name'],
+                    attributes: ['name', 'isMasterAdmin'],
                 },
             ],
             transaction,
@@ -43,12 +43,18 @@ exports.userLogin = async (req, res) => {
             await transaction.rollback();
             return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
         }
+        let type;
+        if (user.Role.isMasterAdmin) {
+            type = 'CRM Main Admin';
+        } else {
+            type = user.Role.name;
+        }
 
         const tokenPayload = {
             id: user.id,
             firstName: user.firstName,
             email: user.email,
-            type: user.Role.name,
+            type: type,
         };
 
         const token = jwt.sign(tokenPayload, process.env.JWT_SECRET_API, {

@@ -7,5 +7,6 @@ router.use('/', require('./menu_order'));
 router.use('/', require('./tenant_user'));
 router.use('/', require('./role'));
 router.use('/', require('./tenant'));
+router.use('/', require('./packages'));
 
 module.exports = router;

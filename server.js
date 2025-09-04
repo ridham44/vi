@@ -91,7 +91,7 @@ app.use(
 // });
 
 // Handle OPTIONS preflight requests for all routes
-app.options('http://localhost:5173/', cors());
+app.options('*', cors());
 
 //* Overwrite the default res.json method to enable API response tracking.
 app.use(responseOverwrite);

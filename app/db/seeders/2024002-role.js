@@ -7,14 +7,14 @@ module.exports = {
             [
                 {
                     id: '6cff3d9f-02d8-11ef-8c8d-74563c332520',
-                    name: 'CRM Main Admin',
+                    name: 'Main Admin',
                     isSystemAdmin: '0',
                     isAdmin: '0',
                     isMasterAdmin: '1',
                     systemDefault: true,
-                    description: 'CRM Main Admin',
+                    description: 'Main Admin',
                     status: '1',
-                    tenantId: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
+                    //tenantId: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
                     createdAt: '2024-04-25 09:49:44',
                     updatedAt: '2024-04-25 09:49:44',
                 },

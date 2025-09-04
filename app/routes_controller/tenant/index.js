@@ -4,7 +4,7 @@ const authPermission = require('../../middlewares/permission.middleware');
 const controller = require('./lib/controller');
 const { modules } = require('../../../utils/index');
 
-const { validationRules, updateValidationRules } = require('./lib/validation');
+const { createValidationRules, updateValidationRules } = require('./lib/validation');
 
 const { expressValidate } = require('../../../utils/lib/common-function');
 
@@ -12,7 +12,7 @@ const { expressValidate } = require('../../../utils/lib/common-function');
 router.get('/tenant-list', auth, controller.getAllTenant);
 
 // Create tenant
-router.post('/tenant', auth, authPermission([modules.add_tenant]), validationRules(), expressValidate, controller.createTenant);
+router.post('/tenant', auth, authPermission([modules.AddTenant]), createValidationRules(), expressValidate, controller.createTenant);
 
 // Update tenant
 router.put('/tenant/:id', auth, updateValidationRules(), expressValidate, controller.updateTenant);
@@ -23,6 +23,7 @@ router.get('/tenant/:id', auth, controller.getTenant);
 // Delete tenant
 router.delete('/tenant/:id', auth, controller.deleteTenant);
 
-// router.put('/tenant/status/:id', auth, controller.updateStatus);
+// Send password for demo
+//router.post('/send-password-demo', controller.sendTenantPasswordDemo);
 
 module.exports = router;

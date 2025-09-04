@@ -1,6 +1,7 @@
 var jwt = require('jsonwebtoken');
 const db = require('../db/models');
 const { status } = require('../../utils');
+const moment = require('moment');
 
 const authenticateUser = async (req, res, next) => {
     try {
@@ -34,10 +35,11 @@ const authenticateUser = async (req, res, next) => {
                 {
                     model: db.Tenant,
                     as: 'Tenant',
-                    attributes: ['id', 'mycoBackendUrl', 'frontendUrl', 'companyId', 'companyName'],
+                    attributes: ['id', 'companyName', 'phone', 'email', 'status', 'packagesEndDate'],
                     where: {
                         deletedAt: null,
                     },
+                    required: false,
                 },
             ],
             disableTenantCheck: true,
@@ -47,6 +49,16 @@ const authenticateUser = async (req, res, next) => {
             return res.status(status.Unauthorized).json({
                 message: 'Unauthorized access3.',
             });
+        }
+
+        if (user.Tenant) {
+            const { packagesEndDate } = user.Tenant;
+
+            if (packagesEndDate && moment().isAfter(moment(packagesEndDate))) {
+                return res.status(status.Forbidden).json({
+                    message: 'Your subscription has expired. Please renew to continue using the system.',
+                });
+            }
         }
 
         let type;

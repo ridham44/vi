@@ -8,10 +8,10 @@ module.exports = {
                 allowNull: false,
                 defaultValue: Sequelize.UUIDV4,
             },
-            // companyId: {
-            //     type: Sequelize.STRING,
-            //     allowNull: false,
-            // },
+            companyId: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
             companyName: {
                 type: Sequelize.STRING,
                 allowNull: true,

@@ -144,7 +144,7 @@ exports.findAllRoute = async (req, res) => {
                     where: {
                         [Op.and]: [
                             { parentId: { [Op.in]: parentMenuIds } },
-                            { type: { [Op.or]: [enums.MenuOrderType.Module, enums.MenuOrderType.Group, enums.MenuOrderType.Right] } },
+                            { type: { [Op.or]: [enums.MenuOrderType.Module, enums.MenuOrderType.Group] } },
                             { status: enums.Status.Active.value },
                             { deletedAt: null },
                             { [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }] },
@@ -525,28 +525,48 @@ exports.findAllForModule = async (req, res) => {
     }
 };
 
-/* exports.findAllForPermission = async (req, res) => {
+exports.getMenuOrdersByTenant = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
     try {
-        var menuOrder = await db.MenuOrder.findAll({
-            attributes: ['id', 'name', 'type', 'parentId', 'level'],
-            where: {
-                deletedAt: null,
-            },
-            include: [
-                {
-                    model: db.MenuOrder,
-                    as: 'Parent',
-                    attributes: ['id', 'name', 'type'],
-                },
-            ],
-            order: [['level', 'ASC']],
+        const { tenantId } = req.params;
+
+        // Find role for tenant
+        const role = await db.Role.findOne({
+            where: { tenantId, name: 'Tenant', deletedAt: null },
+            attributes: ['id'],
+            disableTenantCheck: true,
+            transaction,
         });
 
-        return res.status(status.OK).json({ data: menuOrder });
+        if (!role) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({
+                status: false,
+                message: 'Role not found for this tenant',
+            });
+        }
+
+        // Find all menuOrderId linked with this role
+        const menuOrderRoles = await db.MenuOrderRole.findAll({
+            where: { roleId: role.id },
+            attributes: ['menuOrderId'],
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        const menuOrderIds = menuOrderRoles.map((m) => m.menuOrderId);
+
+        await transaction.commit();
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Success.',
+            data: menuOrderIds,
+        });
     } catch (err) {
-        return common.throwException(err, 'Get Menu Order For Module', req, res);
+        await transaction.rollback();
+        return common.throwException(err, 'Get Menu Orders by Tenant Api', req, res);
     }
-}; */
+};
 
 exports.findAllForPermission = async (req, res) => {
     try {

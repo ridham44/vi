@@ -18,7 +18,6 @@ router.put('/role/:id', auth, updateValidationRules(), expressValidate, controll
 //Get Role by Id
 router.get('/role/:id', controller.getRole);
 
-
 //Delete Role
 router.delete('/role/:id', auth, controller.deleteRole);
 

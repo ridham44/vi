@@ -46,7 +46,7 @@ const updateValidationRules = () => {
         body('mobileNoLimit').optional().isInt({ min: 0 }).withMessage('Mobile No Limit must be a valid integer.'),
 
         body('status').optional().isIn(['0', '1']).withMessage('Status must be either active or inactive.'),
-        
+
         body('packagesId').notEmpty().withMessage('packagesId must be a valid UUID or 0 if trail.'),
 
         body('amount').optional().isFloat({ min: 0 }).withMessage('Amount must be a non-negative number.'),

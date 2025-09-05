@@ -7,7 +7,6 @@ const { status, common } = require('../../../../utils');
 exports.inboundCall = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        // console.log('type', req.user.type);
         const { fromDate, toDate, callType, agentId, simNumber } = req.body;
 
         const whereClause = {

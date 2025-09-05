@@ -36,7 +36,7 @@ module.exports = {
                 comment: '0 for InActive, 1 for Active',
             },
             forWhom: {
-                type: Sequelize.ENUM('CRM Main Admin', 'Tenant', 'Both'),
+                type: Sequelize.ENUM('Main Admin', 'Tenant', 'Both'),
                 allowNull: false,
                 defaultValue: 'Both',
             },

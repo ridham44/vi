@@ -5,7 +5,7 @@ const moment = require('moment');
 
 const authenticateUser = async (req, res, next) => {
     try {
-       const token = req.cookies.token || null;
+        const token = req.cookies.token || null;
 
         if (!token) {
             return res.status(status.Unauthorized).json({ message: 'Authentication token not provided.' });

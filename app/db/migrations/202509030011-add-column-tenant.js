@@ -19,7 +19,7 @@ module.exports = {
         await queryInterface.addColumn('tenant', 'email', {
             type: Sequelize.STRING(100),
             allowNull: false,
-            unique: true,
+            // unique: true,
         });
         await queryInterface.addColumn('tenant', 'status', {
             type: Sequelize.ENUM('0', '1'),
@@ -68,7 +68,7 @@ module.exports = {
         await queryInterface.addColumn('tenant', 'amount', {
             type: Sequelize.DECIMAL(10, 2),
             allowNull: true,
-            defaultValue: 0.00,
+            defaultValue: 0.0,
         });
         await queryInterface.addColumn('tenant', 'paymentStatus', {
             type: Sequelize.ENUM('0', '1'),

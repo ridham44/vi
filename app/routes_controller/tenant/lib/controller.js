@@ -339,7 +339,6 @@ exports.getTenant = async (req, res) => {
                 id,
                 deletedAt: null,
             },
-            transaction,
             include: [
                 {
                     model: db.Packages,
@@ -347,6 +346,8 @@ exports.getTenant = async (req, res) => {
                     attributes: ['packagesName'],
                 },
             ],
+
+            transaction,
         });
 
         if (!tenant) {

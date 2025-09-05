@@ -2,12 +2,7 @@ const { body } = require('express-validator');
 // const db = require('../../../db/models');
 
 const validationRules = () => {
-    return [
-        body('name').notEmpty().trim().withMessage('role name is required.'),
-        // body('isSystemAdmin').notEmpty().trim().withMessage('is System Admin (True Or Flase)  is required.'),
-        // body('isAdmin').notEmpty().trim().withMessage('is  Admin (True Or Flase)  is required.'),
-        // body('menuOrders').notEmpty().trim().withMessage('MenuOrder Id is required'),
-    ];
+    return [body('permission').notEmpty().trim().withMessage('permission is required')];
 };
 
 const updateValidationRules = () => {
@@ -15,7 +10,7 @@ const updateValidationRules = () => {
         body('name').notEmpty().trim().withMessage('role name is required.'),
         // body('isSystemAdmin').notEmpty().trim().withMessage('is System Admin (True Or Flase)  is required.'),
         // body('isAdmin').notEmpty().trim().withMessage('is  Admin (True Or Flase)  is required.'),
-        // body('menuOrders').notEmpty().trim().withMessage('MenuOrder Id is required'),
+        body('menuOrders').notEmpty().trim().withMessage('MenuOrder Id is required'),
     ];
 };
 

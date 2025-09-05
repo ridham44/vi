@@ -47,7 +47,7 @@ exports.userLogin = async (req, res) => {
         console.log(user.Role.name);
         
         if (user.Role.isMasterAdmin) {
-            type = 'CRM Main Admin';
+            type = 'Main Admin';
         } else {
             type = user.Role.name;
         }
@@ -411,7 +411,7 @@ exports.getAllUser = async (req, res) => {
             tenantId: req.user.tenantId,
             deletedAt: null,
         };
-        if (req.user.type != 'CRM Main Admin') {
+        if (req.user.type != 'Main Admin') {
             whereCondition.tenantId = req.user.tenantId;
             whereCondition.email = {
                 [Op.ne]: process.env.EMAIL,

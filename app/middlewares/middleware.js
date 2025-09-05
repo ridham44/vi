@@ -5,16 +5,16 @@ const moment = require('moment');
 
 const authenticateUser = async (req, res, next) => {
     try {
-       const token = req.cookies.token || null;
+        const token = req.cookies.token || null;
 
         if (!token) {
-            return res.status(status.Unauthorized).json({ message: 'Unauthorized access1.' });
+            return res.status(status.Unauthorized).json({ message: 'Unauthorized access.' });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET_API);
 
         if (!decoded) {
-            return res.status(status.Unauthorized).json({ message: 'Unauthorized access2.' });
+            return res.status(status.Unauthorized).json({ message: 'Unauthorized access.' });
         }
 
         const user = await db.User.scope('withPassword').findOne({
@@ -47,7 +47,7 @@ const authenticateUser = async (req, res, next) => {
 
         if (!user) {
             return res.status(status.Unauthorized).json({
-                message: 'Unauthorized access3.',
+                message: 'Unauthorized access.',
             });
         }
 

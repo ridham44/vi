@@ -12,16 +12,16 @@ module.exports = {
                 type: Sequelize.STRING(100),
                 allowNull: false,
             },
-            isSystemAdmin: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: false,
-                allowNull: false,
-            },
-            isAdmin: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: false,
-                allowNull: false,
-            },
+            // isSystemAdmin: {
+            //     type: Sequelize.BOOLEAN,
+            //     defaultValue: false,
+            //     allowNull: false,
+            // },
+            // isAdmin: {
+            //     type: Sequelize.BOOLEAN,
+            //     defaultValue: false,
+            //     allowNull: false,
+            // },
             isMasterAdmin: {
                 type: Sequelize.BOOLEAN,
                 defaultValue: false,

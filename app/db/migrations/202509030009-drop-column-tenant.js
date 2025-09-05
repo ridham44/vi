@@ -2,7 +2,6 @@
 
 module.exports = {
     up: async (queryInterface, Sequelize) => {
-        await queryInterface.removeColumn('tenant', 'companyId');
         await queryInterface.removeColumn('tenant', 'subDomain');
         await queryInterface.removeColumn('tenant', 'mycoBackendUrl');
         await queryInterface.removeColumn('tenant', 'frontendUrl');

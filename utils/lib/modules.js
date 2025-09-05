@@ -8,7 +8,8 @@ module.exports = {
     Tenants: 'f49400ac-819a-11f0-8973-74d83e9d1673',
     AddTenant: 'f49400ac-819a-11f0-8973-74d83e9d1674',
     ManagePhone: 'r49400ac-819a-11f0-8973-74d83e9d1674',
-    Department: 'd49400ac-819a-11f0-8973-74d83e9d2489',
+    Department: 'b204e522-e051-449a-8ba3-fafd4c3ec715',
+    AddDepartment: 'f49400ac-819a-11f0-8973-74d83e9d1623',
     Packages: 'p49400ac-819a-11f0-8973-74d83e9d2490',
     Addpackages: 'p49400ac-819a-11f0-8973-74d83e9d2491',
 };

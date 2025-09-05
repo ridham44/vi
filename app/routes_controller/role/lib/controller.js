@@ -9,10 +9,10 @@ exports.createRole = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         // const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
-        const { name, menuOrders } = req.body;
+        const { name } = req.body;
 
         let tenantId;
-        if (req.user.type != 'CRM Main Admin') {
+        if (req.user.type != 'Main Admin') {
             tenantId = req.user.tenantId;
         } else {
             tenantId = null;
@@ -37,17 +37,17 @@ exports.createRole = async (req, res) => {
             createdBy: req.user.id,
             tenantId: tenantId,
         };
-        let role = await db.Role.create(payload, { transaction });
+        await db.Role.create(payload, { transaction });
 
-        await Promise.all(
-            menuOrders.map(async (data) => {
-                const menuOrderpayload = {
-                    menuOrderId: data,
-                    roleId: role.id,
-                };
-                await db.MenuOrderRole.create(menuOrderpayload, { transaction });
-            })
-        );
+        // await Promise.all(
+        //     menuOrders.map(async (data) => {
+        //         const menuOrderpayload = {
+        //             menuOrderId: data,
+        //             roleId: role.id,
+        //         };
+        //         await db.MenuOrderRole.create(menuOrderpayload, { transaction });
+        //     })
+        // );
 
         await transaction.commit();
 
@@ -106,13 +106,12 @@ exports.updateRole = async (req, res) => {
     try {
         const { id } = req.params;
         let tenantId;
-        if (req.user.type != 'CRM Main Admin') {
+        if (req.user.type != 'Main Admin') {
             tenantId = req.user.tenantId;
         } else {
             tenantId = null;
         }
-        // const { name, isSystemAdmin, isAdmin, menuOrders } = req.body;
-        const { name, menuOrders } = req.body;
+        const { name } = req.body;
 
         const checkExist = await db.Role.findOne({
             where: {
@@ -123,7 +122,6 @@ exports.updateRole = async (req, res) => {
             disableTenantCheck: true,
             transaction,
         });
-        console.log('checkExist', checkExist, 'id', id, 'tenantId', tenantId);
         if (!checkExist) {
             await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
@@ -147,45 +145,8 @@ exports.updateRole = async (req, res) => {
             return res.status(status.Conflict).json({ status: false, message: 'Role already exists!' });
         }
 
-        const recordsToDelete = await db.MenuOrderRole.findAll({
-            where: {
-                roleId: id,
-            },
-            disableTenantCheck: true,
-            include: [
-                {
-                    model: db.Role,
-                    as: 'Role',
-                    where: {
-                        tenantId: tenantId,
-                    },
-                },
-            ],
-        });
-
-        const idsToDelete = recordsToDelete.map((r) => r.id);
-        if (idsToDelete.length > 0) {
-            await db.MenuOrderRole.destroy({
-                where: {
-                    id: idsToDelete,
-                },
-            });
-        }
-
-        await Promise.all(
-            menuOrders.map(async (data) => {
-                const menuOrderpayload = {
-                    menuOrderId: data,
-                    roleId: id,
-                    tenantId: tenantId,
-                };
-                await db.MenuOrderRole.create(menuOrderpayload, { transaction });
-            })
-        );
         const payload = {
             name,
-            // isSystemAdmin,
-            // isAdmin,
             description: req.body?.description,
             updatedAt: new Date(),
             updatedBy: req.user.id,
@@ -251,14 +212,14 @@ exports.getRole = async (req, res) => {
     try {
         const { id } = req.params;
         let tenantId;
-        if (req.user.type != 'CRM Main Admin') {
+        if (req.user.type != 'Main Admin') {
             tenantId = req.user.tenantId;
         } else {
             tenantId = null;
         }
 
         const checkExist = await db.Role.findOne({
-            attributes: ['name', 'description', 'status'],
+            attributes: ['id', 'name', 'description', 'status'],
             where: {
                 id: id,
                 status: enums.Status.Active.value,
@@ -282,7 +243,7 @@ exports.getRole = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
-        
+
         await transaction.rollback();
         return common.throwException(err, 'Get Role Api', req, res);
     }
@@ -305,7 +266,7 @@ exports.getAllRole = async (req, res) => {
         // const takeRecords = parseInt(take, 10) || 100;
 
         let tenantId;
-        if (req.user.type != 'CRM Main Admin') {
+        if (req.user.type != 'Main Admin') {
             tenantId = req.user.tenantId;
         } else {
             tenantId = null;

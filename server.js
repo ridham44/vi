@@ -66,16 +66,17 @@ app.use(morgan(':remote-addr [:date[web]] :method :url :status - :response-time 
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(bodyParser.json({ limit: '50mb' }));
 
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173', 'https://videv.chplgroup.org'];
+
 app.use(
     cors({
         origin: function (origin, callback) {
-            if (!origin) return callback(null, true);
-
-            if (/^http:\/\/localhost:\d+$/.test(origin)) {
-                return callback(null, true);
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                console.error('❌ Blocked by CORS:', origin);
+                callback(new Error('CORS policy does not allow this origin'));
             }
-
-            return callback(new Error('CORS policy does not allow this origin'), false);
         },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],

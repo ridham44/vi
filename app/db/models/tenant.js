@@ -9,35 +9,78 @@ module.exports = (sequelize, Sequelize) => {
                 allowNull: false,
                 defaultValue: Sequelize.UUIDV4,
             },
-            companyId: {
+            companyName: {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
-            companyName: {
+            address: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
+            phone: {
+                type: Sequelize.STRING,
+                allowNull: false,
+            },
+            email: {
+                type: Sequelize.STRING,
+                allowNull: false,
+                unique: true,
+            },
+            status: {
+                type: Sequelize.ENUM('0', '1'),
+                allowNull: false,
+                defaultValue: '1',
+                comment: '0=Inactive, 1=Active',
+            },
+            remarks: {
                 type: Sequelize.STRING,
                 allowNull: true,
             },
-            subDomain: {
-                type: Sequelize.STRING,
+            mobileNoLimit: {
+                type: Sequelize.INTEGER,
+                allowNull: true,
+                defaultValue: 0,
+            },
+            packagesId: {
+                type: Sequelize.UUID,
+                allowNull: true,
+                association: {
+                    model: 'Packages',
+                    key: 'id',
+                    onUpdate: 'CASCADE',
+                    onDelete: 'RESTRICT',
+                    belongsToAlias: 'packages',
+                    hasManyAlias: 'Tenants',
+                },
+            },
+            packagesStartDate: {
+                type: Sequelize.DATE,
                 allowNull: true,
             },
-            mycoBackendUrl: {
-                type: Sequelize.STRING,
+            packagesEndDate: {
+                type: Sequelize.DATE,
                 allowNull: true,
             },
-            frontendUrl: {
-                type: Sequelize.STRING,
+            trialDays: {
+                type: Sequelize.INTEGER,
+                allowNull: true,
+                defaultValue: 0,
+                comment: 'Number of trial days',
+            },
+            lastRenewDate: {
+                type: Sequelize.DATE,
                 allowNull: true,
             },
-            mobileRegex: {
-                type: Sequelize.STRING,
+            amount: {
+                type: Sequelize.DECIMAL(10, 2),
                 allowNull: true,
+                defaultValue: 0.0,
             },
-            isOTPEnable: {
+            paymentStatus: {
                 type: Sequelize.ENUM('0', '1'),
                 allowNull: true,
                 defaultValue: '1',
-                comment: '0 for disable, 1 for enable',
+                comment: '0=Unpaid, 1=Paid',
             },
             createdAt: {
                 type: Sequelize.DATE,

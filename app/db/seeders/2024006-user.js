@@ -12,7 +12,7 @@ module.exports = {
                     mobile: '1234567890',
                     email: 'superadmin@gmail.com',
                     password: '$2b$10$9BEv6xyfn//eV4VTNUy49OwgnRp7Is2wSKRZZd0Lp80NVMpzmBVui', //Admin@123
-                    tenantId: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
+                    //tenantId: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
                     roleId: '6cff3d9f-02d8-11ef-8c8d-74563c332520',
                     profileImage: '',
                     status: '1',

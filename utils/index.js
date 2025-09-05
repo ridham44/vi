@@ -1,5 +1,5 @@
 module.exports = {
-    // modules: require('./lib/modules'),
+    modules: require('./lib/modules'),
     messages: require('./lib/messages/api.response').messages,
     status: require('./lib/messages/api.response').status,
     // sendGrid: require('./lib/sendGrid').sendMail,

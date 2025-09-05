@@ -9,4 +9,9 @@ module.exports = {
         Admin: '1',
         User: '0',
     },
+    MenuOrderType: {
+        Group: '1',
+        Module: '2',
+        Right: '3',
+    },
 };

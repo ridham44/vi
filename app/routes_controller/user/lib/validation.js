@@ -1,8 +1,7 @@
 const { body } = require('express-validator');
-const db = require('../../../db/models');
-const { Op } = require('sequelize');
-const User = db.User;
-const Role = db.Role;
+//const db = require('../../../db/models');
+//const { Op } = require('sequelize');
+//const Role = db.Role;
 
 const loginRules = () => {
     return [
@@ -21,27 +20,7 @@ const validationRules = () => {
             .withMessage('Mobile is required.')
             .isMobilePhone(['en-IN'])
             .withMessage('Enter a valid Mobile Number.'),
-        body('email')
-            .trim()
-            .notEmpty()
-            .withMessage('Email is required.')
-            .isEmail()
-            .withMessage('Enter a valid email')
-            .custom(async (value) => {
-                try {
-                    const user = await User.findOne({
-                        where: {
-                            email: value?.toLowerCase(),
-                        },
-                    });
-                    if (user) {
-                        return Promise.reject('Email already in use.');
-                    }
-                    return true;
-                } catch (err) {
-                    return Promise.reject('Something went wrong');
-                }
-            }),
+        body('email').trim().notEmpty().withMessage('Email is required.').isEmail().withMessage('Enter a valid email'),
         body('password')
             .notEmpty()
             .withMessage('Password is required field')

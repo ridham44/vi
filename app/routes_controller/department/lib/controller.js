@@ -67,6 +67,9 @@ exports.updateDepartment = async (req, res) => {
         const checkDepartmentNameExist = await db.Department.findOne({
             where: {
                 name: name,
+                id: {
+                    [Op.ne]: id,
+                },
                 deletedAt: null,
                 tenantId: req.user.tenantId,
             },
@@ -137,7 +140,6 @@ exports.deleteDepartment = async (req, res) => {
             message: 'Department deleted successfully.',
         });
     } catch (err) {
-
         await transaction.rollback();
         return common.throwException(err, 'Delete Department Api', req, res);
     }

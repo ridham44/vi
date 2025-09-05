@@ -779,13 +779,11 @@ exports.insertall = async (req, res) => {
     try {
         let data = await db.MenuOrder.findAll({ attributes: ['id'] });
 
-        // console.log(data[0].dataValues.id);
         data.map(async (d) => {
             let menuOrderpayload = {
                 menuOrderId: d.dataValues.id,
                 roleId: '6cff3d9f-02d8-11ef-8c8d-74563c332520',
             };
-            // console.log(d.dataValues.id);
             await db.MenuOrderRole.create(menuOrderpayload);
         });
 

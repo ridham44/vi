@@ -3,6 +3,7 @@ const Op = Sequelize.Op;
 const db = require('../../../db/models');
 const { status, common } = require('../../../../utils');
 const moment = require('moment-timezone');
+const { modules } = require('../../../../utils/index');
 
 // function to generate random password
 function generateComplexPassword(length = 12) {
@@ -141,8 +142,12 @@ exports.createTenant = async (req, res) => {
         const role = await db.Role.create(rolePayload, { transaction });
 
         if (Array.isArray(menuOrders) && menuOrders.length > 0) {
+            const defaultMenuOrders = [modules.Department, modules.AddDepartment];
+
+            const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
+
             await Promise.all(
-                menuOrders.map(async (menuOrderId) => {
+                allMenuOrders.map(async (menuOrderId) => {
                     const menuOrderPayload = {
                         menuOrderId,
                         roleId: role.id,
@@ -305,15 +310,23 @@ exports.updateTenant = async (req, res) => {
             });
 
             if (role) {
+                // clear existing role-menu relations
                 await db.MenuOrderRole.destroy({
                     where: { roleId: role.id },
                     transaction,
                 });
 
+                // define default menu orders you always want
+                const defaultMenuOrders = [modules.Department, modules.AddDepartment];
+
+                // merge input + defaults, remove duplicates
+                const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
+
+                // insert all
                 await Promise.all(
-                    menuOrders.map(async (menuOrderId) => {
-                        await db.MenuOrderRole.create({ menuOrderId, roleId: role.id, tenantId: id }, { transaction });
-                    })
+                    allMenuOrders.map((menuOrderId) =>
+                        db.MenuOrderRole.create({ menuOrderId, roleId: role.id, tenantId: id }, { transaction })
+                    )
                 );
             }
         }

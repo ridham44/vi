@@ -1,15 +1,17 @@
 {
     "development": {
-        "username": "chpl",
+         "username": "chpl",
         "password": "Chpl@321.",
         "database": "demo_chpl",
+
         "host": "localhost",
         "dialect": "mysql",
         "pool": { "max": 5, "min": 0, "acquire": 30000, "idle": 10000 },
         "seederStorage": "sequelize",
         "migrationStorageTableName": "SequelizeMeta",
         "seederStorageTableName": "sequelizeData",
-        "logging": false
+        "logging": false,
+        "port": 3306
     },
     "production": {
         "username": "baseapicp_basecp",

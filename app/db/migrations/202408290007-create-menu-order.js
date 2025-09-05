@@ -1,70 +1,68 @@
 'use strict';
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable('user', {
+        await queryInterface.createTable('menu_order', {
             id: {
                 type: Sequelize.UUID,
                 primaryKey: true,
                 allowNull: false,
                 defaultValue: Sequelize.UUIDV4,
             },
-            firstName: {
-                type: Sequelize.STRING,
+            name: {
+                type: Sequelize.STRING(100),
                 allowNull: false,
             },
-            lastName: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            mobile: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            email: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            password: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            profileImage: {
-                type: Sequelize.TEXT,
+            url: {
+                type: Sequelize.STRING(150),
                 allowNull: true,
             },
-            isAdmin: {
-                type: Sequelize.ENUM('0', '1'),
+            icon: {
+                type: Sequelize.STRING(100),
+                allowNull: true,
+            },
+            subMenu: {
+                type: Sequelize.BOOLEAN,
                 allowNull: false,
-                defaultValue: '0',
+                defaultValue: false,
+            },
+            level: {
+                type: Sequelize.INTEGER,
+                allowNull: true,
             },
             status: {
-                type: Sequelize.ENUM('1', '0'),
+                type: Sequelize.ENUM('0', '1'),
                 allowNull: false,
                 defaultValue: '1',
                 comment: '0 for InActive, 1 for Active',
             },
-            roleId: {
-                type: Sequelize.UUID,
-                references: {
-                    model: 'role',
-                    key: 'id',
-                },
-                onUpdate: 'CASCADE',
-                onDelete: 'RESTRICT',
+            forWhom: {
+                type: Sequelize.ENUM('Main Admin', 'Tenant', 'Both'),
+                allowNull: false,
+                defaultValue: 'Both',
             },
-            tenantId: {
+            key: {
+                type: Sequelize.STRING(100),
+                allowNull: true,
+            },
+            type: {
+                type: Sequelize.ENUM('1', '2', '3'),
+                allowNull: true,
+                defaultValue: '1',
+                comment: '1 for group, 2 for module, 3 for right',
+            },
+            parentId: {
                 type: Sequelize.UUID,
+                allowNull: true,
                 references: {
-                    model: 'tenant',
+                    model: 'menu_order',
                     key: 'id',
                 },
-                allowNull: true,
                 onUpdate: 'CASCADE',
                 onDelete: 'RESTRICT',
             },
             createdAt: {
-                allowNull: false,
                 type: Sequelize.DATE,
+                allowNull: false,
             },
             createdBy: {
                 type: Sequelize.UUID,
@@ -76,8 +74,8 @@ module.exports = {
                 onDelete: 'RESTRICT',
             },
             updatedAt: {
-                allowNull: true,
                 type: Sequelize.DATE,
+                allowNull: true,
             },
             updatedBy: {
                 type: Sequelize.UUID,
@@ -89,8 +87,8 @@ module.exports = {
                 onDelete: 'RESTRICT',
             },
             deletedAt: {
-                allowNull: true,
                 type: Sequelize.DATE,
+                allowNull: true,
             },
             deletedBy: {
                 type: Sequelize.UUID,
@@ -104,6 +102,6 @@ module.exports = {
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('user');
+        await queryInterface.dropTable('menu_order');
     },
 };

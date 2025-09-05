@@ -7,11 +7,12 @@ module.exports = {
             [
                 {
                     id: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
-                    companyId: '1',
                     companyName: 'Developer(CHPL)',
-                    subDomain: 'https://dev.my-company.app/india/',
-                    mycoBackendUrl: 'https://dev.my-company.app/india/crmApi',
-                    frontendUrl: 'http://localhost:3000/india/crm',
+                    address: 'A-Block, 5th Floor, WTT, World Trade Tower,Ahmedabad, India',
+                    phone: '+91-9876543210',
+                    email: 'chpl@gmail.com',
+                    status: '1', 
+                    remarks: 'Migrated from old schema',
                     createdAt: '2024-09-06 18:13:26',
                     updatedAt: '2024-11-08 10:30:18',
                     deletedAt: null,

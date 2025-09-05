@@ -3,6 +3,7 @@ const Op = Sequelize.Op;
 const db = require('../../../db/models');
 const { status, common } = require('../../../../utils');
 const moment = require('moment-timezone');
+const { modules } = require('../../../../utils/index');
 
 // function to generate random password
 function generateComplexPassword(length = 12) {
@@ -140,9 +141,13 @@ exports.createTenant = async (req, res) => {
 
         const role = await db.Role.create(rolePayload, { transaction });
 
-        if (Array.isArray(menuOrders) && menuOrders.length > 0) {
+        if (Array.isArray(menuOrders)) {
+            const defaultMenuOrders = [modules.Department, modules.AddDepartment];
+
+            const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
+
             await Promise.all(
-                menuOrders.map(async (menuOrderId) => {
+                allMenuOrders.map(async (menuOrderId) => {
                     const menuOrderPayload = {
                         menuOrderId,
                         roleId: role.id,

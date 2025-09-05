@@ -208,7 +208,7 @@ module.exports = {
                     status: '1',
                     createdAt: new Date(),
                     key: 'add phone',
-                    parentId: 'p49400ac-819a-11f0-8973-74d83e9d2445',
+                    parentId: '91a50a22-8a28-11f0-87c0-74d83e9d1674',
                 },
                 {
                     id: '21eee5da-8a1f-11f0-87c0-74d83e9d1674',

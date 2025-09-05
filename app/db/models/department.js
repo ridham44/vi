@@ -38,6 +38,7 @@ module.exports = (sequelize, Sequelize) => {
             },
             updatedAt: {
                 type: Sequelize.DATE,
+                allowNull: true,
                 onUpdate: sequelize.literal('CURRENT_TIMESTAMP'),
             },
             deletedAt: {

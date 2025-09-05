@@ -49,23 +49,22 @@ function generateComplexPassword(length = 12) {
 //     }
 // };
 
-
 exports.createTenant = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { 
-            companyName, 
-            address, 
-            phone, 
-            email, 
-            remarks, 
-            mobileNoLimit, 
-            menuOrders, 
-            packagesId, 
-            packagesStartDate, 
-            amount, 
-            paymentStatus, 
-            trialDays 
+        const {
+            companyName,
+            address,
+            phone,
+            email,
+            remarks,
+            mobileNoLimit,
+            menuOrders,
+            packagesId,
+            packagesStartDate,
+            amount,
+            paymentStatus,
+            trialDays,
         } = req.body;
 
         const checkExist = await db.Tenant.findOne({
@@ -85,7 +84,7 @@ exports.createTenant = async (req, res) => {
         let packagesEndDate = null;
         let lastRenewDate = null;
 
-        if (packagesId && packagesId !== "0") {
+        if (packagesId && packagesId !== '0') {
             packages = await db.Packages.findOne({
                 where: { id: packagesId },
                 transaction,
@@ -100,13 +99,13 @@ exports.createTenant = async (req, res) => {
             }
 
             // Calculate packagesEndDate using noOfMonths from packages
-            packagesEndDate = moment(packagesStartDate).add(packages.noOfMonths, "months").toDate();
+            packagesEndDate = moment(packagesStartDate).add(packages.noOfMonths, 'months').toDate();
 
             // Set lastRenewDate: if old end date exists and is >= today, keep it, else new end date
             lastRenewDate = packagesEndDate;
-        } else if (packagesId === "0") {
+        } else if (packagesId === '0') {
             // Trial case
-            packagesEndDate = moment(packagesStartDate).add(trialDays, "days").toDate();
+            packagesEndDate = moment(packagesStartDate).add(trialDays, 'days').toDate();
             lastRenewDate = null;
         }
 
@@ -118,12 +117,12 @@ exports.createTenant = async (req, res) => {
             email,
             remarks,
             mobileNoLimit,
-            packagesId: packagesId === "0" ? null : packagesId,
-            packagesStartDate: packagesId === "0" ? packagesStartDate : packagesStartDate,
+            packagesId: packagesId === '0' ? null : packagesId,
+            packagesStartDate: packagesId === '0' ? packagesStartDate : packagesStartDate,
             packagesEndDate,
-            trialDays: packagesId === "0" ? trialDays : 0,
-            amount: packagesId === "0" ? 0 : amount,
-            paymentStatus: packagesId === "0" ? "0" : paymentStatus,
+            trialDays: packagesId === '0' ? trialDays : 0,
+            amount: packagesId === '0' ? 0 : amount,
+            paymentStatus: packagesId === '0' ? '0' : paymentStatus,
             lastRenewDate,
         };
 
@@ -194,7 +193,6 @@ exports.createTenant = async (req, res) => {
     }
 };
 
-
 exports.updateTenant = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
@@ -212,7 +210,7 @@ exports.updateTenant = async (req, res) => {
             packagesStartDate,
             amount,
             paymentStatus,
-            trialDays
+            trialDays,
         } = req.body;
 
         const checkExist = await db.Tenant.findOne({
@@ -251,7 +249,7 @@ exports.updateTenant = async (req, res) => {
         let packagesEndDate = null;
         let lastRenewDate = checkExist.lastRenewDate;
 
-        if (packagesId && packagesId !== "0") {
+        if (packagesId && packagesId !== '0') {
             const pkg = await db.Packages.findOne({
                 where: { id: packagesId },
                 transaction,
@@ -266,14 +264,14 @@ exports.updateTenant = async (req, res) => {
             }
 
             // calculate end date
-            packagesEndDate = moment(packagesStartDate).add(pkg.noOfMonths, "months").toDate();
+            packagesEndDate = moment(packagesStartDate).add(pkg.noOfMonths, 'months').toDate();
 
             // if no previous end date or it’s already expired → set new renew date
             if (!lastRenewDate || moment(lastRenewDate).isBefore(moment())) {
                 lastRenewDate = packagesEndDate;
             }
-        } else if (packagesId === "0") {
-            packagesEndDate = moment(packagesStartDate).add(trialDays, "days").toDate();
+        } else if (packagesId === '0') {
+            packagesEndDate = moment(packagesStartDate).add(trialDays, 'days').toDate();
             lastRenewDate = null;
         }
 
@@ -285,12 +283,12 @@ exports.updateTenant = async (req, res) => {
             remarks,
             mobileNoLimit,
             status: tenantStatus,
-            packagesId: packagesId === "0" ? null : packagesId,
+            packagesId: packagesId === '0' ? null : packagesId,
             packagesStartDate,
             packagesEndDate,
-            trialDays: packagesId === "0" ? trialDays : 0,
-            amount: packagesId === "0" ? 0 : amount,
-            paymentStatus: packagesId === "0" ? "0" : paymentStatus,
+            trialDays: packagesId === '0' ? trialDays : 0,
+            amount: packagesId === '0' ? 0 : amount,
+            paymentStatus: packagesId === '0' ? '0' : paymentStatus,
             lastRenewDate,
             updatedAt: new Date(),
             updatedBy: req.user?.id || null,
@@ -314,10 +312,7 @@ exports.updateTenant = async (req, res) => {
 
                 await Promise.all(
                     menuOrders.map(async (menuOrderId) => {
-                        await db.MenuOrderRole.create(
-                            { menuOrderId, roleId: role.id, tenantId: id },
-                            { transaction }
-                        );
+                        await db.MenuOrderRole.create({ menuOrderId, roleId: role.id, tenantId: id }, { transaction });
                     })
                 );
             }
@@ -344,6 +339,14 @@ exports.getTenant = async (req, res) => {
                 id,
                 deletedAt: null,
             },
+            include: [
+                {
+                    model: db.Packages,
+                    as: 'packages',
+                    attributes: ['packagesName'],
+                },
+            ],
+
             transaction,
         });
 
@@ -455,7 +458,7 @@ exports.getAllTenant = async (req, res) => {
                 { companyName: { [Op.like]: `%${search}%` } },
                 { address: { [Op.like]: `%${search}%` } },
                 { phone: { [Op.like]: `%${search}%` } },
-                { email: { [Op.like]: `%${search}%` } }
+                { email: { [Op.like]: `%${search}%` } },
             ];
         }
 
@@ -464,6 +467,13 @@ exports.getAllTenant = async (req, res) => {
             order: [['createdAt', 'DESC']],
             limit: pageSizes,
             offset: (pages - 1) * pageSizes,
+            include: [
+                {
+                    model: db.Packages,
+                    as: 'packages',
+                    attributes: ['packagesName'],
+                },
+            ],
         });
 
         const totalCount = await db.Tenant.count({ where: whereCondition });

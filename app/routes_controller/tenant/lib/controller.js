@@ -315,10 +315,14 @@ exports.updateTenant = async (req, res) => {
                     transaction,
                 });
 
+                const defaultMenuOrders = [modules.Department, modules.AddDepartment];
+
+                const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
+
                 await Promise.all(
-                    menuOrders.map(async (menuOrderId) => {
-                        await db.MenuOrderRole.create({ menuOrderId, roleId: role.id, tenantId: id }, { transaction });
-                    })
+                    allMenuOrders.map((menuOrderId) =>
+                        db.MenuOrderRole.create({ menuOrderId, roleId: role.id, tenantId: id }, { transaction })
+                    )
                 );
             }
         }

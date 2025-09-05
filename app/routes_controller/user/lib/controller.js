@@ -45,7 +45,7 @@ exports.userLogin = async (req, res) => {
         }
         let type;
         console.log(user.Role.name);
-        
+
         if (user.Role.isMasterAdmin) {
             type = 'CRM Main Admin';
         } else {

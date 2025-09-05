@@ -8,13 +8,13 @@ const authenticateUser = async (req, res, next) => {
        const token = req.cookies.token || null;
 
         if (!token) {
-            return res.status(status.Unauthorized).json({ message: 'Unauthorized access1.' });
+            return res.status(status.Unauthorized).json({ message: 'Authentication token not provided.' });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET_API);
 
         if (!decoded) {
-            return res.status(status.Unauthorized).json({ message: 'Unauthorized access2.' });
+            return res.status(status.Unauthorized).json({ message: 'Invalid or expired authentication token' });
         }
 
         const user = await db.User.scope('withPassword').findOne({
@@ -47,7 +47,7 @@ const authenticateUser = async (req, res, next) => {
 
         if (!user) {
             return res.status(status.Unauthorized).json({
-                message: 'Unauthorized access3.',
+                message: 'User not found or inactive.',
             });
         }
 
@@ -56,7 +56,7 @@ const authenticateUser = async (req, res, next) => {
 
             if (packagesEndDate && moment().isAfter(moment(packagesEndDate))) {
                 return res.status(status.Forbidden).json({
-                    message: 'Your subscription has expired. Please renew to continue using the system.',
+                    message: 'Subscription expired. Please renew to continue.',
                 });
             }
         }

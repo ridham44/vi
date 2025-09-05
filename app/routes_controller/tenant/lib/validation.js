@@ -19,11 +19,13 @@ const createValidationRules = () => {
 
         body('menuOrders.*').notEmpty().withMessage('Each menu order must be provided.'),
 
-        body('packagesId').notEmpty().withMessage('packagesId must be a valid UUID or 0 if trail.'),
+        body('packagesId').notEmpty().withMessage('packagesId must be required a valid UUID or 0 if trail.'),
 
         body('amount').optional().isFloat({ min: 0 }).withMessage('Amount must be a non-negative number.'),
 
         body('paymentStatus').optional().isIn(['0', '1']).withMessage('Payment status must be either pending or completed.'),
+
+        body('packagesStartDate').notEmpty().withMessage('Package start date is required.'),
 
         body('trialDays').optional().isInt({ min: 0 }).withMessage('Trial days must be a non-negative integer.'),
     ];
@@ -50,6 +52,8 @@ const updateValidationRules = () => {
         body('amount').optional().isFloat({ min: 0 }).withMessage('Amount must be a non-negative number.'),
 
         body('paymentStatus').optional().isIn(['0', '1']).withMessage('Payment status must be either pending or completed.'),
+
+        body('packagesStartDate').notEmpty().withMessage('Package start date is required.'),
 
         body('trialDays').optional().isInt({ min: 0 }).withMessage('Trial days must be a non-negative integer.'),
     ];

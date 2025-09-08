@@ -165,6 +165,52 @@ exports.changePassword = async (req, res) => {
     }
 };
 
+exports.forgotPassword = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const { email } = req.body;
+        if (email == 'superadmin@gmail.com' || email == '') {
+            return res.status(status.BadRequest).json({ status: false, message: 'Invalid Email!' });
+        }
+        
+        const user = await db.User.scope('withPassword').findOne({
+            where: { email },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (!user) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({ status: false, message: 'User not found' });
+        }
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
+        let tempPassword = '';
+        const length = 12;
+        for (let i = 0; i < length; i++) {
+            tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        console.log('Temporary Password:', tempPassword);
+
+        await user.update({ password: tempPassword }, { transaction });
+
+        const mailOptions = {
+            to: email,
+            subject: 'Your New Password',
+            text: `Hello ${user.firstName || ''},\n\nYour password has been reset.\nTemporary Password: ${tempPassword}\n\nPlease login and change it immediately.`,
+        };
+        await common.sendEmail(mailOptions);
+
+        await transaction.commit();
+        return res.status(status.OK).json({ status: true, message: 'Temporary password sent to your email' });
+    } catch (err) {
+        await transaction.rollback();
+        console.error(err);
+        return res.status(status.InternalServerError).json({ status: false, message: 'Something went wrong' });
+    }
+};
+
 exports.createUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {

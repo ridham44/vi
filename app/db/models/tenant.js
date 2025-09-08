@@ -21,6 +21,11 @@ module.exports = (sequelize, Sequelize) => {
                 type: Sequelize.STRING,
                 allowNull: false,
             },
+            countryCode: {
+                type: Sequelize.STRING(10),
+                allowNull: true,
+                comment: 'Country dialing code like +91, +1',
+            },
             email: {
                 type: Sequelize.STRING,
                 allowNull: false,

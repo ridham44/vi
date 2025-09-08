@@ -57,6 +57,7 @@ exports.createTenant = async (req, res) => {
             companyName,
             address,
             phone,
+            countryCode,
             email,
             remarks,
             mobileNoLimit,
@@ -115,6 +116,7 @@ exports.createTenant = async (req, res) => {
             companyName,
             address,
             phone,
+            countryCode,
             email,
             remarks,
             mobileNoLimit,
@@ -206,6 +208,7 @@ exports.updateTenant = async (req, res) => {
             companyName,
             address,
             phone,
+            countryCode,
             email,
             remarks,
             mobileNoLimit,
@@ -284,6 +287,7 @@ exports.updateTenant = async (req, res) => {
             companyName,
             address,
             phone,
+            countryCode,
             email,
             remarks,
             mobileNoLimit,
@@ -424,7 +428,7 @@ exports.deleteTenant = async (req, res) => {
 exports.getAllTenant = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { companyName, address, phone, email, status: isActive, page, pageSize, startDate, endDate, search } = req.query;
+        const { companyName, address, phone, email, countryCode, status: isActive, page, pageSize, startDate, endDate, search } = req.query;
 
         const dateFormat = 'YYYY-MM-DD';
         const firstDate = startDate
@@ -463,12 +467,17 @@ exports.getAllTenant = async (req, res) => {
             whereCondition.status = isActive;
         }
 
+        if(countryCode){
+            whereCondition.countryCode = countryCode;
+        }
+
         if (search) {
             whereCondition[Op.or] = [
                 { companyName: { [Op.like]: `%${search}%` } },
                 { address: { [Op.like]: `%${search}%` } },
                 { phone: { [Op.like]: `%${search}%` } },
                 { email: { [Op.like]: `%${search}%` } },
+                { countryCode: { [Op.like]: `%${search}%` } },
             ];
         }
 

@@ -1,8 +1,8 @@
 {
     "development": {
-         "username": "chpl",
+        "username": "chpl",
         "password": "Chpl@321.",
-        "database": "demo_chpl",
+        "database": "videmo_chpl",
 
         "host": "localhost",
         "dialect": "mysql",

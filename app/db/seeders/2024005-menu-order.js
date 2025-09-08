@@ -117,7 +117,7 @@ module.exports = {
                     parentId: 'f49400ac-819a-11f0-8973-74d83e9d1673',
                 },
                 {
-                    id: 'r49400ac-819a-11f0-8973-74d83e9d1674',
+                    id: 'a1234567-89ab-4cde-8f01-234567890abc',
                     name: 'Manage phone',
                     url: '/manage-phone',
                     icon: 'mdi:phone-settings',
@@ -157,7 +157,7 @@ module.exports = {
                     parentId: 'b204e522-e051-449a-8ba3-fafd4c3ec715',
                 },
                 {
-                    id: 'p49400ac-819a-11f0-8973-74d83e9d2490',
+                    id: 'c1234567-89ab-4cde-8f01-234567890def',
                     name: 'packages',
                     url: '/packages',
                     icon: 'mdi:currency-usd',
@@ -170,7 +170,7 @@ module.exports = {
                     key: 'packages',
                 },
                 {
-                    id: 'p49400ac-819a-11f0-8973-74d83e9d2491',
+                    id: 'd1234567-89ab-4cde-8f01-234567890fed',
                     name: 'Add packages',
                     url: '/packages/add',
                     icon: 'mdi:playlist-plus',
@@ -181,7 +181,7 @@ module.exports = {
                     status: '1',
                     createdAt: new Date(),
                     key: 'add_packages',
-                    parentId: 'p49400ac-819a-11f0-8973-74d83e9d2490',
+                    parentId: 'c1234567-89ab-4cde-8f01-234567890def',
                 },
                 {
                     id: '91a50a22-8a28-11f0-87c0-74d83e9d1674',

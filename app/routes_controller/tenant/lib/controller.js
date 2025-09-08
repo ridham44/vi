@@ -310,6 +310,7 @@ exports.updateTenant = async (req, res) => {
             });
 
             if (role) {
+                // clear existing role-menu relations
                 await db.MenuOrderRole.destroy({
                     where: { roleId: role.id },
                     transaction,

@@ -7,9 +7,9 @@ module.exports = {
     Users: 'b938d270-d191-4e4f-a87e-6a3c1a06cc40',
     Tenants: 'f49400ac-819a-11f0-8973-74d83e9d1673',
     AddTenant: 'f49400ac-819a-11f0-8973-74d83e9d1674',
-    ManagePhone: 'r49400ac-819a-11f0-8973-74d83e9d1674',
+    ManagePhone: 'a1234567-89ab-4cde-8f01-234567890abc',
     Department: 'b204e522-e051-449a-8ba3-fafd4c3ec715',
     AddDepartment: 'f49400ac-819a-11f0-8973-74d83e9d1623',
-    Packages: 'p49400ac-819a-11f0-8973-74d83e9d2490',
-    Addpackages: 'p49400ac-819a-11f0-8973-74d83e9d2491',
+    Packages: 'c1234567-89ab-4cde-8f01-234567890def',
+    Addpackages: 'd1234567-89ab-4cde-8f01-234567890fed',
 };

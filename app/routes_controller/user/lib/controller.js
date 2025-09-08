@@ -9,6 +9,7 @@ const moment = require('moment-timezone');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 exports.userLogin = async (req, res) => {
     const transaction = await db.sequelize.transaction();
@@ -169,11 +170,8 @@ exports.forgotPassword = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { email } = req.body;
-        if (email == 'superadmin@gmail.com' || email == '') {
-            return res.status(status.BadRequest).json({ status: false, message: 'Invalid Email!' });
-        }
-        
-        const user = await db.User.scope('withPassword').findOne({
+
+        const user = await db.User.findOne({
             where: { email },
             disableTenantCheck: true,
             transaction,
@@ -184,30 +182,91 @@ exports.forgotPassword = async (req, res) => {
             return res.status(status.NotFound).json({ status: false, message: 'User not found' });
         }
 
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
-        let tempPassword = '';
-        const length = 12;
-        for (let i = 0; i < length; i++) {
-            tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
+        // Generate secure token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
 
-        console.log('Temporary Password:', tempPassword);
+        // Save token in forgot_password table
+        await db.ForgotPassword.create(
+            {
+                userId: user.id,
+                token,
+                expiresAt,
+            },
+            { transaction }
+        );
 
-        await user.update({ password: tempPassword }, { transaction });
+        // Reset link
+        const resetLink = `https://videv.chplgroup.org/forgot-password?token=${token}`;
 
-        const mailOptions = {
+        // Send email
+        await common.sendEmail({
             to: email,
-            subject: 'Your New Password',
-            text: `Hello ${user.firstName || ''},\n\nYour password has been reset.\nTemporary Password: ${tempPassword}\n\nPlease login and change it immediately.`,
-        };
-        await common.sendEmail(mailOptions);
+            subject: 'Password Reset',
+            text: `Hello ${user.firstName || ''},\n\nClick the link below to reset your password:\n${resetLink}\n\nThis link will expire in 1 hour.`,
+        });
 
         await transaction.commit();
-        return res.status(status.OK).json({ status: true, message: 'Temporary password sent to your email' });
+        return res.status(status.OK).json({ status: true, message: 'Password reset link sent to your email' });
     } catch (err) {
         await transaction.rollback();
         console.error(err);
         return res.status(status.InternalServerError).json({ status: false, message: 'Something went wrong' });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const { token, newPassword } = req.body;
+
+        const resetRequest = await db.ForgotPassword.findOne({
+            where: { token, used: false },
+            transaction,
+        });
+
+        if (!resetRequest) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({
+                status: false,
+                message: 'Invalid or expired token',
+            });
+        }
+
+        if (new Date() > resetRequest.expiresAt) {
+            await transaction.rollback();
+            return res.status(status.BadRequest).json({
+                status: false,
+                message: 'Reset link has expired',
+            });
+        }
+
+        const user = await db.User.scope('withPassword').findByPk(resetRequest.userId, {
+            transaction,
+            disableTenantCheck: true,
+        });
+
+        if (!user) {
+            await transaction.rollback();
+            return res.status(status.NotFound).json({
+                status: false,
+                message: 'User not found',
+            });
+        }
+
+        await user.update({ password: newPassword }, { transaction });
+
+        await resetRequest.update({ used: true }, { transaction });
+
+        await transaction.commit();
+        return res.status(status.OK).json({ status: true, message: 'Password reset successful' });
+    } catch (err) {
+        await transaction.rollback();
+        console.error(err);
+        return res.status(status.InternalServerError).json({
+            status: false,
+            message: 'Something went wrong',
+        });
     }
 };
 

@@ -50,8 +50,16 @@ const changePasswordRules = () => {
         body('confirmPassword').notEmpty().withMessage('Confirm Password is required'),
     ];
 };
+
 const forgotPasswordRules = () => {
     return [body('email').trim().notEmpty().withMessage('Email is required.').isEmail().withMessage('Enter a valid email')];
+};
+
+const resetPasswordRules = () => {
+    return [
+        //body('token').notEmpty().withMessage('Token is required'),
+        body('newPassword').notEmpty().withMessage('New Password is required'),
+    ];
 };
 module.exports = {
     loginRules,
@@ -59,4 +67,5 @@ module.exports = {
     updateValidationRules,
     changePasswordRules,
     forgotPasswordRules,
+    resetPasswordRules,
 };

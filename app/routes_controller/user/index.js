@@ -3,7 +3,14 @@ const auth = require('../../middlewares/middleware');
 const controller = require('./lib/controller');
 
 const { status } = require('../../../utils');
-const { loginRules, changePasswordRules, validationRules, updateValidationRules,forgotPasswordRules } = require('./lib/validation');
+const {
+    loginRules,
+    changePasswordRules,
+    validationRules,
+    updateValidationRules,
+    forgotPasswordRules,
+    resetPasswordRules,
+} = require('./lib/validation');
 const { expressValidate } = require('../../../utils/lib/common-function');
 const multer = require('multer');
 //const path = require('path');
@@ -55,7 +62,9 @@ router.post('/logout', auth, controller.userLogout);
 
 router.put('/change-password', auth, changePasswordRules(), expressValidate, controller.changePassword);
 
-router.post('/forgot-password',forgotPasswordRules(),expressValidate, controller.forgotPassword );
+router.post('/forgot-password', forgotPasswordRules(), expressValidate, controller.forgotPassword);
+
+router.post('/reset-password', resetPasswordRules(), expressValidate, controller.resetPassword);
 
 router.get('/user-list', auth, controller.getAllUser);
 

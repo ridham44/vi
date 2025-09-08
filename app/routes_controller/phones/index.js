@@ -10,7 +10,7 @@ const { validationRules, updateValidationRules } = require('./lib/validation');
 const { expressValidate } = require('../../../utils/lib/common-function');
 
 //creare routes
-router.post('/phone', auth, authPermission([modules.createPhone]), validationRules(), expressValidate, controller.createPhone);
+router.post('/phone', auth, authPermission([modules.AddPhone]), validationRules(), expressValidate, controller.createPhone);
 
 //get all routes
 router.get('/phone', auth, controller.getAllPhones);

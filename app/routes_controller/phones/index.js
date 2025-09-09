@@ -16,10 +16,10 @@ router.post('/phone', auth, authPermission([modules.AddPhone]), validationRules(
 router.get('/phone', auth, controller.getAllPhones);
 
 // //update routes
-router.put('/phone/:id', auth, authPermission([modules.createPhone]), updateValidationRules(), expressValidate, controller.updatePhone);
+router.put('/phone/:id', auth, authPermission([modules.AddPhone]), updateValidationRules(), expressValidate, controller.updatePhone);
 
 // //get by id routes
-// router.get('/department/:id', auth, controller.getDepartment);
+router.get('/phone/:id', auth, controller.getPhone);
 
 // //delete routes
 router.delete('/phone/:id', auth, controller.deletePhone);

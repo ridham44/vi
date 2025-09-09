@@ -18,6 +18,10 @@ module.exports = (sequelize, Sequelize) => {
                 type: Sequelize.STRING(36),
                 allowNull: false,
             },
+            countryCode: {
+                type: Sequelize.STRING(10),
+                allowNull: true,
+            },
             departmentId: {
                 type: Sequelize.UUID,
                 allowNull: true,

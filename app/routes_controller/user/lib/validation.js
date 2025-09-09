@@ -57,7 +57,7 @@ const forgotPasswordRules = () => {
 
 const resetPasswordRules = () => {
     return [
-        //body('token').notEmpty().withMessage('Token is required'),
+        body('token').notEmpty().withMessage('Token is required'),
         body('newPassword').notEmpty().withMessage('New Password is required'),
     ];
 };

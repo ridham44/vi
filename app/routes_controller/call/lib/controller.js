@@ -25,10 +25,7 @@ exports.inboundCall = async (req, res) => {
             whereClause.agentId = agentId;
         }
         if (simNumber) {
-            whereClause[Op.or] = [
-                { callingNumber: simNumber },
-                { calledNumber: simNumber }
-            ];
+            whereClause[Op.or] = [{ callingNumber: simNumber }, { calledNumber: simNumber }];
         }
 
         const result = await db.CallDetails.findAll({
@@ -50,10 +47,10 @@ exports.inboundCall = async (req, res) => {
         const response = {
             inbound: { totalCalls: 0, answered: 0, missed: 0, notAnswered: 0, busy: 0 },
             outbound: { totalCalls: 0, answered: 0, missed: 0, notAnswered: 0, busy: 0, notReachable: 0 },
-            summary: { totalCalls: 0, uniqueCalls: 0 } 
+            summary: { totalCalls: 0, uniqueCalls: 0 },
         };
 
-        result.forEach(row => {
+        result.forEach((row) => {
             if (row.callType === 'IN') {
                 response.inbound.totalCalls = Number(row.total_calls);
                 response.inbound.answered = Number(row.answered);
@@ -83,7 +80,6 @@ exports.inboundCall = async (req, res) => {
 
         await transaction.commit();
         return res.status(status.OK).json({ data: response });
-
     } catch (err) {
         console.log(err);
         await transaction.rollback();
@@ -93,36 +89,36 @@ exports.inboundCall = async (req, res) => {
 exports.callFilter = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { 
-            fromDate, 
-            toDate, 
-            startTime, 
-            endTime, 
-            callType, 
+        const {
+            fromDate,
+            toDate,
+            startTime,
+            endTime,
+            callType,
             callStatus,
             callBack,
             departmentId,
-            agentId,   
-            simNumber, 
+            agentId,
+            simNumber,
             callNumber,
             minDuration,
             maxDuration,
-            searchInArchive
+            searchInArchive,
         } = req.body;
 
         const whereClause = { tenantId: req.user.tenantId };
 
         if (fromDate && toDate) {
             whereClause.callStartTime = {
-                [Op.between]: [new Date(fromDate), new Date(toDate)]
+                [Op.between]: [new Date(fromDate), new Date(toDate)],
             };
         }
 
         if (startTime && endTime) {
             whereClause[Op.and] = [
                 Sequelize.where(Sequelize.fn('TIME', Sequelize.col('callStartTime')), {
-                    [Op.between]: [startTime, endTime]
-                })
+                    [Op.between]: [startTime, endTime],
+                }),
             ];
         }
 
@@ -139,7 +135,7 @@ exports.callFilter = async (req, res) => {
         }
 
         if (departmentId) {
-            whereClause.departmentId = departmentId; 
+            whereClause.departmentId = departmentId;
         }
 
         if (agentId) {
@@ -147,22 +143,16 @@ exports.callFilter = async (req, res) => {
         }
 
         if (simNumber) {
-            whereClause[Op.or] = [
-                { callingNumber: simNumber },
-                { calledNumber: simNumber }
-            ];
+            whereClause[Op.or] = [{ callingNumber: simNumber }, { calledNumber: simNumber }];
         }
 
         if (callNumber) {
-            whereClause[Op.or] = [
-                { callingNumber: { [Op.like]: `%${callNumber}%` } },
-                { calledNumber: { [Op.like]: `%${callNumber}%` } }
-            ];
+            whereClause[Op.or] = [{ callingNumber: { [Op.like]: `%${callNumber}%` } }, { calledNumber: { [Op.like]: `%${callNumber}%` } }];
         }
 
         if (minDuration !== undefined && maxDuration !== undefined) {
             whereClause.conversationDuration = {
-                [Op.between]: [minDuration, maxDuration]
+                [Op.between]: [minDuration, maxDuration],
             };
         }
 
@@ -186,14 +176,13 @@ exports.callFilter = async (req, res) => {
             raw: true,
         });
 
-        // Prepare response in UI structure
         const response = {
             inbound: { totalCalls: 0, answered: 0, missed: 0, notAnswered: 0, busy: 0 },
             outbound: { totalCalls: 0, answered: 0, missed: 0, notAnswered: 0, busy: 0, notReachable: 0 },
-            summary: { totalCalls: 0, uniqueCalls: 0 }
+            summary: { totalCalls: 0, uniqueCalls: 0 },
         };
 
-        result.forEach(row => {
+        result.forEach((row) => {
             if (row.callType === 'IN') {
                 response.inbound.totalCalls = Number(row.total_calls);
                 response.inbound.answered = Number(row.answered);
@@ -213,7 +202,6 @@ exports.callFilter = async (req, res) => {
             response.summary.totalCalls += Number(row.total_calls);
         });
 
-        // Unique calls (distinct caller numbers)
         const uniqueCalls = await db.CallDetails.count({
             distinct: true,
             col: 'callingNumber',
@@ -224,7 +212,6 @@ exports.callFilter = async (req, res) => {
 
         await transaction.commit();
         return res.status(status.OK).json({ data: response });
-
     } catch (err) {
         console.log(err);
         await transaction.rollback();

@@ -164,6 +164,7 @@ exports.createTenant = async (req, res) => {
         const userPayload = [
             {
                 email,
+                mobile: phone,
                 password: randomPassword,
                 tenantId: tenant.id,
                 roleId: role.id,

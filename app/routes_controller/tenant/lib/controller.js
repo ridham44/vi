@@ -59,6 +59,8 @@ exports.createTenant = async (req, res) => {
             phone,
             countryCode,
             email,
+            firstName,
+            lastName,
             remarks,
             mobileNoLimit,
             menuOrders,
@@ -70,7 +72,12 @@ exports.createTenant = async (req, res) => {
         } = req.body;
 
         const checkExist = await db.Tenant.findOne({
-            where: { companyName, deletedAt: null },
+            where: {
+                [Op.or]: [
+                    { companyName, deletedAt: null },
+                    { email, deletedAt: null },
+                ],
+            },
             transaction,
         });
 
@@ -163,6 +170,8 @@ exports.createTenant = async (req, res) => {
         const randomPassword = generateComplexPassword(12);
         const userPayload = [
             {
+                firstName,
+                lastName,
                 email,
                 mobile: phone,
                 password: randomPassword,
@@ -251,6 +260,25 @@ exports.updateTenant = async (req, res) => {
                 return res.status(status.Conflict).json({
                     status: false,
                     message: 'Company Name already exists!',
+                });
+            }
+        }
+        if (email) {
+            const checkIfEmailExist = await db.Tenant.findOne({
+                where: {
+                    email,
+                    id: { [Op.ne]: id },
+                    deletedAt: null,
+                },
+                disableTenantCheck: true,
+                transaction,
+            });
+
+            if (checkIfEmailExist) {
+                await transaction.rollback();
+                return res.status(status.Conflict).json({
+                    status: false,
+                    message: 'Email already exists!',
                 });
             }
         }
@@ -468,7 +496,7 @@ exports.getAllTenant = async (req, res) => {
             whereCondition.status = isActive;
         }
 
-        if(countryCode){
+        if (countryCode) {
             whereCondition.countryCode = countryCode;
         }
 

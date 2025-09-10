@@ -2,13 +2,12 @@ require('dotenv').config();
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
-const { status, common } = require('../../../../utils');
+const { status, common, dbCommon } = require('../../../../utils');
 
 exports.createPhone = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { number, departmentId, name, tenantId } = req.body;
-        console.log('tenantId', tenantId);
+        const { number, departmentId, name, tenantId, countryCode } = req.body;
 
         const checkExist = await db.Phones.findOne({
             where: {
@@ -41,6 +40,7 @@ exports.createPhone = async (req, res) => {
         const payload = {
             name: name,
             number: number,
+            countryCode: countryCode,
             departmentId: departmentId,
             tenantId: tenantId,
         };
@@ -62,19 +62,18 @@ exports.updatePhone = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
-        const { name, number, tenantId, departmentId } = req.body;
+        const { name, number, tenantId, departmentId, countryCode } = req.body;
 
         const checkExist = await db.Phones.findOne({
             where: {
-                id,
+                number,
+                tenantId,
                 deletedAt: null,
-                tenantId: tenantId,
-                number: { [Op.ne]: number },
+                id: { [Op.ne]: id },
             },
             disableTenantCheck: true,
             transaction,
         });
-
         if (checkExist) {
             await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'phone  already exist' });
@@ -83,6 +82,7 @@ exports.updatePhone = async (req, res) => {
         const payload = {
             name,
             number,
+            countryCode: countryCode,
             tenantId,
             departmentId,
             updatedAt: new Date(),
@@ -118,7 +118,12 @@ exports.deletePhone = async (req, res) => {
             await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'phone number not found' });
         }
-
+        let count = await dbCommon.checkAssociation(id, 'phoneId');
+        if (count > 0) {
+            return res.status(status.BadRequest).json({
+                message: 'Cannot delete phone number. It is associated with other records.',
+            });
+        }
         await checkExist.update(
             {
                 deletedAt: new Date(),
@@ -137,16 +142,15 @@ exports.deletePhone = async (req, res) => {
     }
 };
 
-exports.getDepartment = async (req, res) => {
+exports.getPhone = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
 
-        const checkExist = await db.Department.findOne({
+        const checkExist = await db.Phones.findOne({
             where: {
                 id: id,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
             },
             disableTenantCheck: true,
             transaction,
@@ -154,7 +158,7 @@ exports.getDepartment = async (req, res) => {
 
         if (!checkExist) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ status: false, message: 'Department not found' });
+            return res.status(status.NotFound).json({ status: false, message: 'Phone is not found' });
         }
 
         await transaction.commit();
@@ -165,7 +169,7 @@ exports.getDepartment = async (req, res) => {
         });
     } catch (err) {
         await transaction.rollback();
-        return common.throwException(err, 'Get Department Api', req, res);
+        return common.throwException(err, 'Get Phone Api', req, res);
     }
 };
 
@@ -186,7 +190,7 @@ exports.getAllPhones = async (req, res) => {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
         const findAll = await db.Phones.findAll({
-            attributes: ['id', 'name', 'number', 'createdAt'],
+            attributes: ['id', 'name', 'number', 'countryCode', 'createdAt'],
             where: {
                 ...whereCondition,
             },

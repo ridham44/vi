@@ -6,6 +6,7 @@ const validationRules = () => {
         body('number').notEmpty().trim().withMessage('phone number is required.'),
         body('departmentId').notEmpty().trim().withMessage('departmentId is required.'),
         body('tenantId').notEmpty().trim().withMessage('TenantId  is required.'),
+        body('countryCode').notEmpty().trim().withMessage('CountryCode  is required.'),
     ];
 };
 
@@ -15,6 +16,7 @@ const updateValidationRules = () => {
         body('number').notEmpty().trim().withMessage('phone number is required.'),
         body('departmentId').notEmpty().trim().withMessage('departmentId is required.'),
         body('tenantId').notEmpty().trim().withMessage('tenantId is required.'),
+        body('countryCode').notEmpty().trim().withMessage('CountryCode  is required.'),
     ];
 };
 

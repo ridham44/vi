@@ -10,16 +10,16 @@ const { validationRules, updateValidationRules } = require('./lib/validation');
 const { expressValidate } = require('../../../utils/lib/common-function');
 
 //creare routes
-router.post('/phone', auth, authPermission([modules.createPhone]), validationRules(), expressValidate, controller.createPhone);
+router.post('/phone', auth, authPermission([modules.AddPhone]), validationRules(), expressValidate, controller.createPhone);
 
 //get all routes
 router.get('/phone', auth, controller.getAllPhones);
 
 // //update routes
-router.put('/phone/:id', auth, authPermission([modules.createPhone]), updateValidationRules(), expressValidate, controller.updatePhone);
+router.put('/phone/:id', auth, authPermission([modules.AddPhone]), updateValidationRules(), expressValidate, controller.updatePhone);
 
 // //get by id routes
-// router.get('/department/:id', auth, controller.getDepartment);
+router.get('/phone/:id', auth, controller.getPhone);
 
 // //delete routes
 router.delete('/phone/:id', auth, controller.deletePhone);

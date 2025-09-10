@@ -9,6 +9,8 @@ const createValidationRules = () => {
 
         body('phone').notEmpty().trim().isLength({ min: 7, max: 15 }).withMessage('Phone number must be between 7 and 15 digits.'),
 
+        body('countryCode').notEmpty().trim().isLength({ min: 1, max: 5 }).withMessage('Country code must be between 1 and 5 characters.'),
+
         body('email').notEmpty().trim().isEmail().withMessage('Valid email is required.'),
 
         body('remarks').optional().isString().withMessage('Remarks must be a string.'),
@@ -38,6 +40,8 @@ const updateValidationRules = () => {
         body('address').optional().trim().isLength({ max: 255 }).withMessage('Address must not exceed 255 characters.'),
 
         body('phone').optional().trim().isMobilePhone().withMessage('Phone must be a valid mobile number.'),
+
+        body('countryCode').optional().trim().isLength({ min: 1, max: 5 }).withMessage('Country code must be between 1 and 5 characters.'),
 
         body('email').optional().isEmail().withMessage('Email must be valid.'),
 

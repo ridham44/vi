@@ -32,8 +32,7 @@ exports.createRole = async (req, res) => {
 
         const payload = {
             name,
-            // isSystemAdmin,
-            // isAdmin,
+            description: req.body?.description,
             createdBy: req.user.id,
             tenantId: tenantId,
         };

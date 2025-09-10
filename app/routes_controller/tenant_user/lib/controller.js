@@ -19,7 +19,7 @@ exports.create = async (req, res) => {
             return res.status(status.Conflict).json({ message: 'Email already exists!' });
         }
 
-        const user = await db.User.create(
+        await db.User.create(
             {
                 firstName: body.firstName,
                 lastName: body.lastName,
@@ -28,6 +28,7 @@ exports.create = async (req, res) => {
                 email: body.email,
                 roleId: body.roleId,
                 tenantId: req.user.tenantId,
+                departmentId: body.departmentId || null,
                 status: '1',
                 createdBy: req.user.id,
             },
@@ -35,7 +36,7 @@ exports.create = async (req, res) => {
         );
 
         await transaction.commit();
-        return res.status(status.OK).json({ message: 'User created successfully!', data: user });
+        return res.status(status.OK).json({ message: 'User created successfully!' });
     } catch (error) {
         await transaction.rollback();
         return common.throwException(error, 'Create User API', req, res);
@@ -83,12 +84,13 @@ exports.update = async (req, res) => {
             roleId: body.roleId,
             password: body.password,
             tenantId: req.user.tenantId,
+            departmentId: body.departmentId || null,
             updatedBy: req.user.id,
         });
 
         await user.save({ transaction });
         await transaction.commit();
-        return res.status(status.OK).json({ message: 'User updated successfully!', data: user });
+        return res.status(status.OK).json({ message: 'User updated successfully!' });
     } catch (error) {
         await transaction.rollback();
         return common.throwException(error, 'Update User API', req, res);

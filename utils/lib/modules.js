@@ -12,4 +12,6 @@ module.exports = {
     AddDepartment: 'f49400ac-819a-11f0-8973-74d83e9d1623',
     Packages: 'c1234567-89ab-4cde-8f01-234567890def',
     Addpackages: 'd1234567-89ab-4cde-8f01-234567890fed',
+    AddPhone:'c0bcd9c5-8a28-11f0-87c0-74d83e9d1674',
+    Phone:'91a50a22-8a28-11f0-87c0-74d83e9d1674',
 };

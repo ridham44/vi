@@ -584,7 +584,7 @@ exports.getMenuOrdersByTenant = async (req, res) => {
 
         // Find role for tenant
         const role = await db.Role.findOne({
-            where: { tenantId, name: 'Tenant', deletedAt: null },
+            where: { tenantId, deletedAt: null },
             attributes: ['id'],
             disableTenantCheck: true,
             transaction,

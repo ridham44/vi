@@ -17,7 +17,7 @@ exports.userLogin = async (req, res) => {
         const { email, password } = req.body;
 
         const user = await User.scope('withPassword').findOne({
-            attributes: ['id', 'firstName', 'lastName', 'mobile', 'email', 'password', 'profileImage'],
+            attributes: ['id', 'firstName', 'lastName', 'email', 'password', 'profileImage'],
             where: {
                 deletedAt: null,
                 email: email,
@@ -74,7 +74,7 @@ exports.userLogin = async (req, res) => {
         const userData = {
             firstName: user.firstName,
             lastName: user.lastName,
-            mobile: user.mobile,
+            // mobile: user.mobile,
             email: user.email,
             profileImage: user.profileImage,
             role: user.Role.name,
@@ -366,15 +366,47 @@ exports.createUser = async (req, res) => {
             return res.status(status.Conflict).json({ status: false, message: 'Email already exists!' });
         }
 
+        const checkDepartmentExist = await db.Department.findOne({
+            where: {
+                id: req.body.departmentId,
+                deletedAt: null,
+                tenantId: req.user.tenantId,
+            },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (!checkDepartmentExist) {
+            await transaction.rollback();
+            return res.status(status.Conflict).json({ status: false, message: 'Department not exists!' });
+        }
+
+        const checkRoleExist = await db.Role.findOne({
+            where: {
+                id: req.body.roleId,
+                deletedAt: null,
+                tenantId: req.user.tenantId,
+            },
+            disableTenantCheck: true,
+            transaction,
+        });
+
+        if (!checkRoleExist) {
+            await transaction.rollback();
+            return res.status(status.Conflict).json({ status: false, message: 'Role not exists!' });
+        }
+
         const payload = {
             firstName,
             lastName,
             email,
+            roleId: req.body.roleId,
             password,
             departmentId: req.body?.departmentId,
             profileImage: file ? `/uploads/userProfile/${file.filename}` : null,
             status: enums.Status.Active.value,
             createdBy: req.user.id,
+            tenantId: req.user.tenantId,
         };
         const user = await User.create(payload, { transaction });
 
@@ -444,7 +476,7 @@ exports.updateUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
-        const { firstName, lastName, mobile, email } = req.body;
+        const { firstName, lastName, email, departmentId, roleId, phoneIds } = req.body;
         const file = req.file;
 
         const checkExist = await User.findOne({
@@ -490,14 +522,33 @@ exports.updateUser = async (req, res) => {
         const payload = {
             firstName,
             lastName,
-            mobile,
             email,
+            roleId,
+            departmentId,
             profileImage: file ? `/uploads/userProfile/${file.filename}` : checkExist.profileImage,
             updatedAt: new Date(),
             updatedBy: req.user.id,
         };
 
         await User.update(payload, { where: { id: id }, transaction });
+        await db.UserPhones.destroy({
+            where: {
+                userId: id,
+            },
+            transaction,
+        });
+
+        let phonesArray = [];
+
+        phoneIds.forEach(async (i) => {
+            phonesArray.push({
+                userId: id,
+                phoneId: i,
+                createdBy: req.user.id,
+            });
+        });
+
+        await db.UserPhones.bulkCreate(phonesArray, { transaction });
         await transaction.commit();
         return res.status(status.OK).json({
             status: true,
@@ -553,7 +604,7 @@ exports.getUser = async (req, res) => {
         const { id } = req.params;
 
         const checkExist = await User.findOne({
-            attributes: ['firstName', 'lastName', 'mobile', 'email', 'profileImage'],
+            attributes: ['firstName', 'lastName', 'email', 'profileImage'],
             where: {
                 id: id,
                 status: enums.Status.Active.value,
@@ -587,7 +638,7 @@ exports.getUser = async (req, res) => {
 exports.getAllUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { firstName, lastName, mobile, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
+        const { firstName, lastName, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
         const dateFormat = 'YYYY-MM-DD';
         const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
         const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
@@ -639,11 +690,11 @@ exports.getAllUser = async (req, res) => {
             };
         }
 
-        if (mobile) {
-            whereCondition.mobile = {
-                [Op.like]: `%${mobile}%`,
-            };
-        }
+        // if (mobile) {
+        //     whereCondition.mobile = {
+        //         [Op.like]: `%${mobile}%`,
+        //     };
+        // }
 
         if (email) {
             whereCondition.email = {
@@ -661,12 +712,12 @@ exports.getAllUser = async (req, res) => {
             whereCondition[Op.or] = [
                 { firstName: { [Op.like]: `%${search}%` } },
                 { lastName: { [Op.like]: `%${search}%` } },
-                { mobile: { [Op.like]: `%${search}%` } },
+                // { mobile: { [Op.like]: `%${search}%` } },
                 { email: { [Op.like]: `%${search}%` } },
             ];
         }
         const findAll = await User.findAll({
-            attributes: ['id', 'firstName', 'lastName', 'mobile', 'email', 'profileImage', 'status', 'createdAt'],
+            attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt'],
             where: {
                 ...whereCondition,
             },

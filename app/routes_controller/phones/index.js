@@ -4,16 +4,19 @@ const controller = require('./lib/controller');
 const authPermission = require('../../middlewares/permission.middleware');
 const { modules } = require('../../../utils/index');
 
-const { validationRules, updateValidationRules } = require('./lib/validation');
+const { validationRules, updateValidationRules, getPhoneValidationRules } = require('./lib/validation');
 // const { validationRules } = require('./lib/validation');
 
 const { expressValidate } = require('../../../utils/lib/common-function');
 
-//creare routes
+//creare phone
 router.post('/phone', auth, authPermission([modules.AddPhone]), validationRules(), expressValidate, controller.createPhone);
 
-//get all routes
+//get all phone  numbers
 router.get('/phone', auth, controller.getAllPhones);
+
+//get all phone  numbers by department
+router.post('/phone/by-department', auth, getPhoneValidationRules(), expressValidate, controller.getAllPhonesByDepartment);
 
 // //update routes
 router.put('/phone/:id', auth, authPermission([modules.AddPhone]), updateValidationRules(), expressValidate, controller.updatePhone);

@@ -234,3 +234,28 @@ exports.getAllPhones = async (req, res) => {
         return common.throwException(err, 'Get phone List Api', req, res);
     }
 };
+
+exports.getAllPhonesByDepartment = async (req, res) => {
+    try {
+        const { departmentIds } = req.body;
+
+        const phones = await db.Phones.findAll({
+            where: {
+                departmentId: {
+                    [Op.in]: departmentIds,
+                },
+                deletedAt: null,
+            },
+            disableTenantCheck: true,
+            attributes: ['id', 'name', 'countryCode', 'number', 'departmentId'],
+        });
+        return res.status(status.OK).json({
+            status: true,
+            message: 'Success.',
+            data: phones,
+        });
+    } catch (err) {
+        console.error('Error fetching phones:', err);
+        return common.throwException(err, 'Get Phone Api', req, res);
+    }
+};

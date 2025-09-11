@@ -19,8 +19,12 @@ const updateValidationRules = () => {
         body('countryCode').notEmpty().trim().withMessage('CountryCode  is required.'),
     ];
 };
+const getPhoneValidationRules = () => {
+    return [body('departmentIds').isArray({ min: 1 }).withMessage('departmentIds must be a non-empty array.')];
+};
 
 module.exports = {
     validationRules,
+    getPhoneValidationRules,
     updateValidationRules,
 };

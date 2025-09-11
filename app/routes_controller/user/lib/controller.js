@@ -93,6 +93,81 @@ exports.userLogin = async (req, res) => {
         return common.throwException(err, 'User Login Api', req, res);
     }
 };
+// exports.userLogin1 = async (req, res) => {
+//     const transaction = await db.sequelize.transaction();
+//     try {
+//         const { email, password } = req.body;
+
+//         const user = await User.scope('withPassword').findOne({
+//             attributes: ['id', 'firstName', 'lastName', 'mobile', 'email', 'password', 'profileImage'],
+//             where: {
+//                 deletedAt: null,
+//                 email: email,
+//                 status: enums.Status.Active.value,
+//             },
+//             disableTenantCheck: true,
+//             include: [
+//                 {
+//                     model: db.Role,
+//                     as: 'Role',
+//                     attributes: ['name', 'isMasterAdmin'],
+//                 },
+//             ],
+//             transaction,
+//         });
+
+//         if (!user) {
+//             await transaction.rollback();
+//             return res.status(status.NotFound).json({ status: false, message: 'Invalid Email!' });
+//         }
+
+//         const isPasswordValid = await bcrypt.compare(password, user.password);
+//         if (!isPasswordValid) {
+//             await transaction.rollback();
+//             return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
+//         }
+
+//         const token = crypto.randomBytes(32).toString('hex');
+//         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day expiry
+
+//         await db.ForgotPassword.create(
+//             {
+//                 userId: user.id,
+//                 token: token,
+//                 expiresAt,
+//             },
+//             { transaction }
+//         );
+//         res.cookie('token', token, {
+//             httpOnly: true,
+//             secure: true,
+//             //domain: ".inc1.devtunnels.ms",
+//             sameSite: 'none', //.env.NODE_ENV === 'production' ? 'none' : 'lax',
+//             maxAge: 24 * 60 * 60 * 1000,
+//         });
+
+//         const userData = {
+//             firstName: user.firstName,
+//             lastName: user.lastName,
+//             mobile: user.mobile,
+//             email: user.email,
+//             profileImage: user.profileImage,
+//             role: user.Role.name,
+//         };
+
+//         await transaction.commit();
+
+//         return res.status(status.OK).json({
+//             status: true,
+//             message: 'Login Success',
+//             data: userData,
+//         });
+//     } catch (err) {
+//         console.log(err);
+//         await transaction.rollback();
+//         return common.throwException(err, 'User Login Api', req, res);
+//     }
+// };
 
 exports.userLogout = (req, res) => {
     res.clearCookie('token', {
@@ -273,7 +348,7 @@ exports.resetPassword = async (req, res) => {
 exports.createUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { firstName, lastName, mobile, email, password } = req.body;
+        const { firstName, lastName, email, password, phoneIds } = req.body;
         const file = req.file;
 
         const checkExist = await User.findOne({
@@ -294,14 +369,26 @@ exports.createUser = async (req, res) => {
         const payload = {
             firstName,
             lastName,
-            mobile,
             email,
             password,
+            departmentId: req.body?.departmentId,
             profileImage: file ? `/uploads/userProfile/${file.filename}` : null,
             status: enums.Status.Active.value,
             createdBy: req.user.id,
         };
-        await User.create(payload, { transaction });
+        const user = await User.create(payload, { transaction });
+
+        let phonesArray = [];
+
+        phoneIds.forEach(async (i) => {
+            phonesArray.push({
+                userId: user.id,
+                phoneId: i,
+                createdBy: req.user.id,
+            });
+        });
+
+        await db.UserPhones.bulkCreate(phonesArray, { transaction });
 
         await transaction.commit();
 

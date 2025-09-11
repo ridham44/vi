@@ -14,13 +14,8 @@ const validationRules = () => {
     return [
         body('firstName').notEmpty().trim().withMessage('First Name is required.'),
         body('lastName').notEmpty().trim().withMessage('Last Name is required.'),
-        body('mobile')
-            .notEmpty()
-            .trim()
-            .withMessage('Mobile is required.')
-            .isMobilePhone(['en-IN'])
-            .withMessage('Enter a valid Mobile Number.'),
         body('email').trim().notEmpty().withMessage('Email is required.').isEmail().withMessage('Enter a valid email'),
+        body('phoneIds').isArray({ min: 1 }).withMessage('departmentIds must be a non-empty array.'),
         body('password')
             .notEmpty()
             .withMessage('Password is required field')

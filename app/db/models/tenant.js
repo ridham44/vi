@@ -46,6 +46,10 @@ module.exports = (sequelize, Sequelize) => {
                 allowNull: true,
                 defaultValue: 0,
             },
+            isoCode: {
+                type: Sequelize.STRING,
+                allowNull: true,
+            },
             packagesId: {
                 type: Sequelize.UUID,
                 allowNull: true,

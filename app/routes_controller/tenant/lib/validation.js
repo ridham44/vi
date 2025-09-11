@@ -13,6 +13,10 @@ const createValidationRules = () => {
 
         body('email').notEmpty().trim().isEmail().withMessage('Valid email is required.'),
 
+        body('firstName').notEmpty().trim().withMessage('First name is required.'),
+
+        body('lastName').optional().trim(),
+
         body('remarks').optional().isString().withMessage('Remarks must be a string.'),
 
         body('mobileNoLimit').optional().isInt({ min: 0 }).withMessage('Mobile No Limit must be a non-negative integer.'),

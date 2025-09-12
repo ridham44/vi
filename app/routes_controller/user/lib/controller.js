@@ -9,6 +9,7 @@ const moment = require('moment-timezone');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const { fn, col } = db.Sequelize;
 const crypto = require('crypto');
 
 exports.userLogin = async (req, res) => {
@@ -610,6 +611,30 @@ exports.getUser = async (req, res) => {
                 status: enums.Status.Active.value,
                 deletedAt: null,
             },
+            include: [
+                {
+                    model: db.Role,
+                    as: 'Role',
+                    attributes: ['id', 'name'],
+                },
+                {
+                    model: db.Department,
+                    as: 'Department',
+                    attributes: ['id', 'name'],
+                },
+                {
+                    model: db.UserPhones,
+                    as: 'userPhones',
+                    attributes: ['phoneId'],
+                    include: [
+                        {
+                            model: db.Phones,
+                            as: 'Phones', // alias MUST match the association
+                            attributes: ['number', 'departmentId'], // include departmentId
+                        },
+                    ],
+                },
+            ],
             disableTenantCheck: true,
             transaction,
         });
@@ -716,8 +741,9 @@ exports.getAllUser = async (req, res) => {
                 { email: { [Op.like]: `%${search}%` } },
             ];
         }
-        const findAll = await User.findAll({
-            attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt'],
+       const findAll = await User.findAll({
+            attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt',
+            ],
             where: {
                 ...whereCondition,
             },
@@ -727,14 +753,50 @@ exports.getAllUser = async (req, res) => {
                     as: 'Role',
                     attributes: ['name'],
                 },
+                {
+                    model: db.UserPhones,
+                    as: 'userPhones',
+                    attributes: ['phoneId'],
+                },
+                {
+                    model:db.Department,
+                    as:'Department',
+                    attributes:['id','name']
+                }
             ],
             disableTenantCheck: true,
             order: [['createdAt', 'DESC']],
             limit: pageSizes,
             offset: (pages - 1) * pageSizes,
+        }); 
+
+        const findCount = await User.count({ where: whereCondition, disableTenantCheck: true, id: { [Op.ne]: req.user.id } });
+        const phoneCount = await User.count({
+            where: { tenantId: req.user.tenantId, id: { [Op.ne]: req.user.id } },
+            disableTenantCheck: true,
         });
 
-        const findCount = await User.count({ where: whereCondition, disableTenantCheck: true });
+        const activeuserCount = await User.count({
+            where: { tenantId: req.user.tenantId, status: '1', deletedAt: null, id: { [Op.ne]: req.user.id } },
+            disableTenantCheck: true,
+        });
+        const inactiveuserCount = await User.count({
+            where: { tenantId: req.user.tenantId, status: '0', deletedAt: null },
+            disableTenantCheck: true,
+            id: { [Op.ne]: req.user.id },
+        });
+        const departmentCount = await db.Department.count({ where: { tenantId: req.user.tenantId }, disableTenantCheck: true });
+
+        console.log(
+            'phoneCount',
+            phoneCount,
+            'activeuserCount',
+            activeuserCount,
+            'inactiveuserCount',
+            inactiveuserCount,
+            'departmentCount',
+            departmentCount
+        );
 
         if (findAll.length === 0) {
             await transaction.rollback();
@@ -745,7 +807,11 @@ exports.getAllUser = async (req, res) => {
         }
         let response = {
             user: findAll,
-            totalCount: findCount,
+            totalUser: findCount,
+            phoneNumbers: phoneCount,
+            activeuser: activeuserCount,
+            inactiveuser: inactiveuserCount,
+            department: departmentCount,
         };
 
         await transaction.commit();
@@ -755,7 +821,7 @@ exports.getAllUser = async (req, res) => {
             data: response,
         });
     } catch (err) {
-        await transaction.rollback();
+                await transaction.rollback();
         return common.throwException(err, 'Get User List Api', req, res);
     }
 };

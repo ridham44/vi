@@ -9,6 +9,7 @@ const moment = require('moment-timezone');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const { fn, col } = db.Sequelize;
 const crypto = require('crypto');
 
 exports.userLogin = async (req, res) => {
@@ -740,8 +741,9 @@ exports.getAllUser = async (req, res) => {
                 { email: { [Op.like]: `%${search}%` } },
             ];
         }
-        const findAll = await User.findAll({
-            attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt'],
+       const findAll = await User.findAll({
+            attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt',
+            ],
             where: {
                 ...whereCondition,
             },
@@ -752,16 +754,21 @@ exports.getAllUser = async (req, res) => {
                     attributes: ['name'],
                 },
                 {
-                    model: db.userPhones,
+                    model: db.UserPhones,
                     as: 'userPhones',
                     attributes: ['phoneId'],
                 },
+                {
+                    model:db.Department,
+                    as:'Department',
+                    attributes:['id','name']
+                }
             ],
             disableTenantCheck: true,
             order: [['createdAt', 'DESC']],
             limit: pageSizes,
             offset: (pages - 1) * pageSizes,
-        });
+        }); 
 
         const findCount = await User.count({ where: whereCondition, disableTenantCheck: true, id: { [Op.ne]: req.user.id } });
         const phoneCount = await User.count({
@@ -814,7 +821,7 @@ exports.getAllUser = async (req, res) => {
             data: response,
         });
     } catch (err) {
-        await transaction.rollback();
+                await transaction.rollback();
         return common.throwException(err, 'Get User List Api', req, res);
     }
 };

@@ -200,13 +200,25 @@ exports.createTenant = async (req, res) => {
         await db.User.bulkCreate(userPayload, { transaction });
 
         await transaction.commit();
+         const template = await common.getTemplateByName('email.html');
+            const htmlToSend = template({
+                fullName: firstName,
+                password: randomPassword,
+                email:email
+            });
+            const mailOptions = {
+                to: email?.toLowerCase(),
+                subject: 'Login Password',
+                html: htmlToSend,
+            };
+            await common.sendEmail(mailOptions);
 
-        const mailOptions = {
-            to: email,
-            subject: 'Your Tenant Account Password',
-            text: `Hello,\n\nYour tenant account has been created.\nYour password is: ${randomPassword}\n\nPlease change it after your first login.`,
-        };
-        await common.sendEmail(mailOptions);
+        // const mailOptions = {
+        //     to: email,
+        //     subject: 'Your Tenant Account Password',
+        //     text: `Hello,\n\nYour tenant account has been created.\nYour password is: ${randomPassword}\n\nPlease change it after your first login.`,
+        // };
+        // await common.sendEmail(mailOptions);
 
         return res.status(status.OK).json({
             status: true,
@@ -444,7 +456,10 @@ exports.deleteTenant = async (req, res) => {
                 message: 'Tenant not found',
             });
         }
-
+        await db.User.update(
+            {  deletedAt: new Date()},
+            { where: { tenantId : id } }             
+          );
         // Soft delete tenant
         await tenant.update(
             {

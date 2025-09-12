@@ -80,7 +80,17 @@ exports.createTenant = async (req, res) => {
             },
             transaction,
         });
-
+        const checksuperemailExist = await db.User.findOne({
+            where: { email, deletedAt: null },
+            transaction,
+            disableTenantCheck: true,
+        });
+        if (checksuperemailExist) {
+            return res.status(status.Conflict).json({
+                status: false,
+                message: 'Email already exists!',
+            });
+        }
         if (checkExist) {
             await transaction.rollback();
             return res.status(status.Conflict).json({

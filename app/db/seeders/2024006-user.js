@@ -9,7 +9,6 @@ module.exports = {
                     id: 'f2b13458-ac56-4c54-a6cb-53f879dbfe6c',
                     firstName: 'System',
                     lastName: 'admin',
-                    mobile: '1234567890',
                     email: 'superadmin@gmail.com',
                     password: '$2b$10$9BEv6xyfn//eV4VTNUy49OwgnRp7Is2wSKRZZd0Lp80NVMpzmBVui', //Admin@123
                     //tenantId: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',

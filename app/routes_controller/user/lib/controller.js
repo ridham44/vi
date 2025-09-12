@@ -610,6 +610,30 @@ exports.getUser = async (req, res) => {
                 status: enums.Status.Active.value,
                 deletedAt: null,
             },
+            include: [
+                {
+                    model: db.Role,
+                    as: 'Role',
+                    attributes: ['id', 'name'],
+                },
+                {
+                    model: db.Department,
+                    as: 'Department',
+                    attributes: ['id', 'name'],
+                },
+                {
+                    model: db.UserPhones,
+                    as: 'userPhones',
+                    attributes: ['phoneId'],
+                    include: [
+                        {
+                            model: db.Phones,
+                            as: 'Phones', // alias MUST match the association
+                            attributes: ['number', 'departmentId'], // include departmentId
+                        },
+                    ],
+                },
+            ],
             disableTenantCheck: true,
             transaction,
         });
@@ -727,6 +751,11 @@ exports.getAllUser = async (req, res) => {
                     as: 'Role',
                     attributes: ['name'],
                 },
+                {
+                    model: db.userPhones,
+                    as: 'userPhones',
+                    attributes: ['phoneId'],
+                },
             ],
             disableTenantCheck: true,
             order: [['createdAt', 'DESC']],
@@ -734,7 +763,33 @@ exports.getAllUser = async (req, res) => {
             offset: (pages - 1) * pageSizes,
         });
 
-        const findCount = await User.count({ where: whereCondition, disableTenantCheck: true });
+        const findCount = await User.count({ where: whereCondition, disableTenantCheck: true, id: { [Op.ne]: req.user.id } });
+        const phoneCount = await User.count({
+            where: { tenantId: req.user.tenantId, id: { [Op.ne]: req.user.id } },
+            disableTenantCheck: true,
+        });
+
+        const activeuserCount = await User.count({
+            where: { tenantId: req.user.tenantId, status: '1', deletedAt: null, id: { [Op.ne]: req.user.id } },
+            disableTenantCheck: true,
+        });
+        const inactiveuserCount = await User.count({
+            where: { tenantId: req.user.tenantId, status: '0', deletedAt: null },
+            disableTenantCheck: true,
+            id: { [Op.ne]: req.user.id },
+        });
+        const departmentCount = await db.Department.count({ where: { tenantId: req.user.tenantId }, disableTenantCheck: true });
+
+        console.log(
+            'phoneCount',
+            phoneCount,
+            'activeuserCount',
+            activeuserCount,
+            'inactiveuserCount',
+            inactiveuserCount,
+            'departmentCount',
+            departmentCount
+        );
 
         if (findAll.length === 0) {
             await transaction.rollback();
@@ -745,7 +800,11 @@ exports.getAllUser = async (req, res) => {
         }
         let response = {
             user: findAll,
-            totalCount: findCount,
+            totalUser: findCount,
+            phoneNumbers: phoneCount,
+            activeuser: activeuserCount,
+            inactiveuser: inactiveuserCount,
+            department: departmentCount,
         };
 
         await transaction.commit();

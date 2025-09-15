@@ -161,7 +161,7 @@ exports.createTenant = async (req, res) => {
         const role = await db.Role.create(rolePayload, { transaction });
 
         if (Array.isArray(menuOrders)) {
-            const defaultMenuOrders = [modules.Department, modules.AddDepartment];
+            const defaultMenuOrders = [modules.Department, modules.AddDepartment,modules.Add_Role_Rights,modules.Role_Rights];
 
             const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
 
@@ -199,7 +199,6 @@ exports.createTenant = async (req, res) => {
 
         await db.User.bulkCreate(userPayload, { transaction });
 
-        await transaction.commit();
          const template = await common.getTemplateByName('email.html');
             const htmlToSend = template({
                 fullName: firstName,
@@ -212,6 +211,8 @@ exports.createTenant = async (req, res) => {
                 html: htmlToSend,
             };
             await common.sendEmail(mailOptions);
+            await transaction.commit();
+
 
         // const mailOptions = {
         //     to: email,

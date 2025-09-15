@@ -317,7 +317,7 @@ exports.getAllRole = async (req, res) => {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
         const findAll = await db.Role.findAll({
-            attributes: ['id', 'name', 'description', 'status', 'createdAt'],
+            attributes: ['id', 'name', 'description', 'status', 'createdAt','updatedAt'],
             where: {
                 ...whereCondition,
             },

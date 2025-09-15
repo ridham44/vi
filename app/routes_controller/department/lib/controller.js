@@ -195,7 +195,7 @@ exports.getAllDepartment = async (req, res) => {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
         const findAll = await db.Department.findAll({
-            attributes: ['id', 'name', 'createdAt'],
+            attributes: ['id', 'name', 'createdAt','updatedAt'],
             where: {
                 ...whereCondition,
             },
@@ -242,7 +242,7 @@ exports.getAllDepartmentOption = async (req, res) => {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
         const findAll = await db.Department.findAll({
-            attributes: ['id', 'name', 'createdAt'],
+            attributes: ['id', 'name', 'createdAt','updatedAt'],
             where: {
                 ...whereCondition,
             },

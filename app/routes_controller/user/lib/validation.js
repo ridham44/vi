@@ -19,6 +19,7 @@ const validationRules = () => {
         body('email').trim().notEmpty().withMessage('Email is required.').isEmail().withMessage('Enter a valid email'),
         body('phoneIds').isArray({ min: 1 }).withMessage('phoneIds must be a non-empty array.'),
         body('password')
+            .trim()
             .notEmpty()
             .withMessage('Password is required field')
             .isLength({ min: 8 })
@@ -39,7 +40,7 @@ const updateValidationRules = () => {
 
 const changePasswordRules = () => {
     return [
-        body('oldPassword').notEmpty().trim().withMessage('Old Password is required.'),
+        body('oldPassword').notEmpty().withMessage('Old Password is required.'),
         body('newPassword').notEmpty().withMessage('New Password is required'),
         body('confirmPassword').notEmpty().withMessage('Confirm Password is required'),
     ];

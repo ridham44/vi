@@ -183,6 +183,12 @@ exports.changePassword = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { oldPassword, newPassword, confirmPassword } = req.body;
+        let tenantId;
+        if (req.user.type != 'Main Admin') {
+            tenantId = req.user.tenantId;
+        } else {
+            tenantId = null;
+        }
 
         if (!(newPassword === confirmPassword)) {
             await transaction.rollback();
@@ -196,7 +202,7 @@ exports.changePassword = async (req, res) => {
             where: {
                 id: req.user.id,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
             },
             disableTenantCheck: true,
             transaction,

@@ -183,6 +183,12 @@ exports.changePassword = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { oldPassword, newPassword, confirmPassword } = req.body;
+        let tenantId;
+        if (req.user.type != 'Main Admin') {
+            tenantId = req.user.tenantId;
+        } else {
+            tenantId = null;
+        }
 
         if (!(newPassword === confirmPassword)) {
             await transaction.rollback();
@@ -196,7 +202,7 @@ exports.changePassword = async (req, res) => {
             where: {
                 id: req.user.id,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
             },
             disableTenantCheck: true,
             transaction,
@@ -273,9 +279,8 @@ exports.forgotPassword = async (req, res) => {
         const template = await common.getTemplateByName('forgotpassword.html');
         const htmlToSend = template({
             fullName: user.firstName,
-            resetLink :`https://videv.chplgroup.org/reset-password?token=${token}`
+            resetLink: `https://videv.chplgroup.org/reset-password?token=${token}`,
             //   resetLink :`http://localhost:5173/reset-password?token=${token}`
-
         });
         const mailOptions = {
             to: email?.toLowerCase(),
@@ -387,12 +392,15 @@ exports.createUser = async (req, res) => {
                 message: 'User with the same first and last name already exists!',
             });
         }
-
+        if (email == process.env.ADMINEMAIL) {
+            await transaction.rollback();
+            return res.status(status.Conflict).json({ status: false, message: 'Email already exists!' });
+        }
         const checkExist = await User.findOne({
             where: {
                 email,
                 deletedAt: null,
-                tenantId: req.user.tenantId,
+                tenantId: tenantId,
             },
             disableTenantCheck: true,
             transaction,
@@ -920,7 +928,7 @@ exports.getAllData = async (req, res) => {
             tenantId = null;
         }
         const findCount = await User.count({
-            where: { id: { [Op.ne]: req.user.id }, tenantId: tenantId, deletedAt: null },
+            where: { id: { [Op.ne]: req.user.id }, email: { [Op.ne]: process.env.EMAIL }, tenantId: tenantId, deletedAt: null },
             disableTenantCheck: true,
         });
         const phoneCount = await db.Phones.count({
@@ -929,12 +937,19 @@ exports.getAllData = async (req, res) => {
         });
 
         const activeuserCount = await User.count({
-            where: { tenantId: tenantId, status: '1', deletedAt: null, id: { [Op.ne]: req.user.id } },
+            where: {
+                tenantId: tenantId,
+                email: { [Op.ne]: process.env.EMAIL },
+                status: '1',
+                deletedAt: null,
+                id: { [Op.ne]: req.user.id },
+            },
             disableTenantCheck: true,
         });
         const inactiveuserCount = await User.count({
             where: {
                 tenantId: tenantId,
+                email: { [Op.ne]: process.env.EMAIL },
                 status: '0',
                 deletedAt: null,
                 id: { [Op.ne]: req.user.id },

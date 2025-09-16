@@ -19,7 +19,6 @@ const validationRules = () => {
         body('email').trim().notEmpty().withMessage('Email is required.').isEmail().withMessage('Enter a valid email'),
         body('phoneIds').isArray({ min: 1 }).withMessage('phoneIds must be a non-empty array.'),
         body('password')
-            .trim()
             .notEmpty()
             .withMessage('Password is required field')
             .isLength({ min: 8 })

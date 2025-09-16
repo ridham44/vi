@@ -6,12 +6,11 @@
 
         "host": "localhost",
         "dialect": "mysql",
-        "pool": { "max": 20, "min": 5, "acquire": 60000, "idle": 10000 },
+        "pool": { "max": 100, "min": 0, "acquire": 30000, "idle": 10000 },
         "seederStorage": "sequelize",
         "migrationStorageTableName": "SequelizeMeta",
         "seederStorageTableName": "sequelizeData",
-        "logging": false,
-        "port": 3306
+        "logging": false
     },
     "production": {
         "username": "baseapicp_basecp",

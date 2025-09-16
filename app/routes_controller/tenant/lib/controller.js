@@ -161,7 +161,7 @@ exports.createTenant = async (req, res) => {
         const role = await db.Role.create(rolePayload, { transaction });
 
         if (Array.isArray(menuOrders)) {
-            const defaultMenuOrders = [modules.Department, modules.AddDepartment,modules.Add_Role_Rights,modules.Role_Rights];
+            const defaultMenuOrders = [modules.Department, modules.AddDepartment, modules.Add_Role_Rights, modules.Role_Rights];
 
             const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
 
@@ -199,20 +199,19 @@ exports.createTenant = async (req, res) => {
 
         await db.User.bulkCreate(userPayload, { transaction });
 
-         const template = await common.getTemplateByName('email.html');
-            const htmlToSend = template({
-                fullName: firstName,
-                password: randomPassword,
-                email:email
-            });
-            const mailOptions = {
-                to: email?.toLowerCase(),
-                subject: 'Login Password',
-                html: htmlToSend,
-            };
-            await common.sendEmail(mailOptions);
-            await transaction.commit();
-
+        const template = await common.getTemplateByName('email.html');
+        const htmlToSend = template({
+            fullName: firstName,
+            password: randomPassword,
+            email: email,
+        });
+        const mailOptions = {
+            to: email?.toLowerCase(),
+            subject: 'Login Password',
+            html: htmlToSend,
+        };
+        await common.sendEmail(mailOptions);
+        await transaction.commit();
 
         // const mailOptions = {
         //     to: email,
@@ -396,7 +395,6 @@ exports.updateTenant = async (req, res) => {
 };
 
 exports.getTenant = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
 
@@ -412,26 +410,21 @@ exports.getTenant = async (req, res) => {
                     attributes: ['packagesName'],
                 },
             ],
-
-            transaction,
         });
 
         if (!tenant) {
-            await transaction.rollback();
             return res.status(status.NotFound).json({
                 status: false,
                 message: 'Tenant not found',
             });
         }
 
-        await transaction.commit();
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',
             data: tenant,
         });
     } catch (err) {
-        await transaction.rollback();
         return common.throwException(err, 'Get Tenant Api', req, res);
     }
 };
@@ -457,10 +450,7 @@ exports.deleteTenant = async (req, res) => {
                 message: 'Tenant not found',
             });
         }
-        await db.User.update(
-            {  deletedAt: new Date()},
-            { where: { tenantId : id } }             
-          );
+        await db.User.update({ deletedAt: new Date() }, { where: { tenantId: id } });
         // Soft delete tenant
         await tenant.update(
             {
@@ -481,7 +471,6 @@ exports.deleteTenant = async (req, res) => {
 };
 
 exports.getAllTenant = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const { companyName, address, phone, email, countryCode, status: isActive, page, pageSize, startDate, endDate, search } = req.query;
 
@@ -553,7 +542,6 @@ exports.getAllTenant = async (req, res) => {
         const totalCount = await db.Tenant.count({ where: whereCondition });
 
         if (!tenants || tenants.length === 0) {
-            await transaction.rollback();
             return res.status(status.OK).json({
                 status: true,
                 message: 'No data found!',
@@ -561,7 +549,6 @@ exports.getAllTenant = async (req, res) => {
             });
         }
 
-        await transaction.commit();
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',
@@ -571,7 +558,6 @@ exports.getAllTenant = async (req, res) => {
             },
         });
     } catch (err) {
-        await transaction.rollback();
         return common.throwException(err, 'Get Tenant List Api', req, res);
     }
 };

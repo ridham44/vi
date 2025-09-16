@@ -6,7 +6,7 @@
 
         "host": "localhost",
         "dialect": "mysql",
-        "pool": { "max": 5, "min": 0, "acquire": 30000, "idle": 10000 },
+        "pool": { "max": 20, "min": 5, "acquire": 60000, "idle": 10000 },
         "seederStorage": "sequelize",
         "migrationStorageTableName": "SequelizeMeta",
         "seederStorageTableName": "sequelizeData",

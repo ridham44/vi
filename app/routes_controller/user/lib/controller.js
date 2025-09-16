@@ -273,8 +273,8 @@ exports.forgotPassword = async (req, res) => {
         const template = await common.getTemplateByName('forgotpassword.html');
         const htmlToSend = template({
             fullName: user.firstName,
-            // resetLink :`https://videv.chplgroup.org/reset-password?token=${token}`
-              resetLink :`http://localhost:5173/reset-password?token=${token}`
+            resetLink :`https://videv.chplgroup.org/reset-password?token=${token}`
+            //   resetLink :`http://localhost:5173/reset-password?token=${token}`
 
         });
         const mailOptions = {

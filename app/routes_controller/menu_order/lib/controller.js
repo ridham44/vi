@@ -160,6 +160,7 @@ exports.findAllRoute = async (req, res) => {
             where: {
                 roleId: req.user.roleId,
                 status: enums.Status.Active.value,
+                deletedAt:null
             },
             attributes: [],
             include: [

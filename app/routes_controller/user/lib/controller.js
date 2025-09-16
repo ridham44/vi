@@ -247,7 +247,7 @@ exports.forgotPassword = async (req, res) => {
         const { email } = req.body;
 
         const user = await db.User.findOne({
-            where: { email,deletedAt:null },
+            where: { email, deletedAt: null },
             disableTenantCheck: true,
             transaction,
         });
@@ -283,8 +283,6 @@ exports.forgotPassword = async (req, res) => {
             html: htmlToSend,
         };
         await common.sendEmail(mailOptions);
-
-
 
         // // Reset link
         // const resetLink = `https://videv.chplgroup.org/forgot-password?token=${token}`;
@@ -376,20 +374,20 @@ exports.createUser = async (req, res) => {
                 firstName: firstName,
                 lastName: lastName,
                 deletedAt: null,
-                tenantId:tenantId
+                tenantId: tenantId,
             },
             disableTenantCheck: true,
             transaction,
         });
-        
+
         if (checkIfNameExist) {
             await transaction.rollback();
-            return res.status(status.Conflict).json({ 
-                status: false, 
-                message: 'User with the same first and last name already exists!' 
+            return res.status(status.Conflict).json({
+                status: false,
+                message: 'User with the same first and last name already exists!',
             });
         }
-        
+
         const checkExist = await User.findOne({
             where: {
                 email,
@@ -465,7 +463,7 @@ exports.createUser = async (req, res) => {
         const htmlToSend = template({
             fullName: firstName,
             password: password,
-            email:email
+            email: email,
         });
         const mailOptions = {
             to: email?.toLowerCase(),
@@ -482,7 +480,7 @@ exports.createUser = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
-        
+
         await transaction.rollback();
         return common.throwException(err, 'Create User Api', req, res);
     }
@@ -530,7 +528,7 @@ exports.updateUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
-        const { firstName, lastName, email, departmentId, roleId, phoneIds , status: userStatus} = req.body;
+        const { firstName, lastName, email, departmentId, roleId, phoneIds, status: userStatus } = req.body;
         const file = req.file;
         let tenantId;
         if (req.user.type != 'Main Admin') {
@@ -558,7 +556,7 @@ exports.updateUser = async (req, res) => {
                 id: {
                     [Op.ne]: id,
                 },
-                tenantId:tenantId,
+                tenantId: tenantId,
                 deletedAt: null,
             },
             disableTenantCheck: true,
@@ -578,20 +576,19 @@ exports.updateUser = async (req, res) => {
                     [Op.ne]: id,
                 },
                 deletedAt: null,
-                tenantId:tenantId
+                tenantId: tenantId,
             },
             disableTenantCheck: true,
             transaction,
         });
-        
+
         if (checkIfNameExist) {
             await transaction.rollback();
-            return res.status(status.Conflict).json({ 
-                status: false, 
-                message: 'User with the same first and last name already exists!' 
+            return res.status(status.Conflict).json({
+                status: false,
+                message: 'User with the same first and last name already exists!',
             });
         }
-        
 
         if (file) {
             const oldProfileImage = checkExist.profileImage;
@@ -640,7 +637,7 @@ exports.updateUser = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
-        
+
         await transaction.rollback();
         return common.throwException(err, 'Update User Api', req, res);
     }
@@ -685,12 +682,11 @@ exports.deleteUser = async (req, res) => {
 };
 
 exports.getUser = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
 
         const checkExist = await User.findOne({
-            attributes: ['firstName', 'lastName', 'email', 'profileImage','status','createdAt','updatedAt'],
+            attributes: ['firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt', 'updatedAt'],
             where: {
                 id: id,
                 deletedAt: null,
@@ -700,13 +696,13 @@ exports.getUser = async (req, res) => {
                     model: db.Role,
                     as: 'Role',
                     attributes: ['id', 'name'],
-                    required: false,    
+                    required: false,
                 },
                 {
                     model: db.Department,
                     as: 'Department',
                     attributes: ['id', 'name'],
-                    required: false,    
+                    required: false,
                 },
                 {
                     model: db.UserPhones,
@@ -715,20 +711,18 @@ exports.getUser = async (req, res) => {
                     include: [
                         {
                             model: db.Phones,
-                            as: 'Phones', 
-                            attributes: ['name','number', 'departmentId'],
-                            required: false,    
+                            as: 'Phones',
+                            attributes: ['name', 'number', 'departmentId'],
+                            required: false,
                         },
                     ],
-                    required: false,    
+                    required: false,
                 },
             ],
             disableTenantCheck: true,
-            transaction,
         });
 
         if (!checkExist) {
-            await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'User not found' });
         }
 
@@ -736,72 +730,71 @@ exports.getUser = async (req, res) => {
             checkExist.profileImage = `${checkExist.profileImage}`;
         }
 
-        await transaction.commit();
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',
             data: checkExist,
         });
     } catch (err) {
-        
-        await transaction.rollback();
         return common.throwException(err, 'Get User Api', req, res);
     }
 };
 
 exports.getAllUser = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const { firstName, lastName, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
-        const dateFormat = 'YYYY-MM-DD';
-        const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
-        const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
-        const pages = parseInt(page, 10) || 1;
-        const pageSizes = parseInt(pageSize, 10) || 10;
+        // const dateFormat = 'YYYY-MM-DD';
+        // const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+        // const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+        // const pages = parseInt(page, 10) || 1;
+        // const pageSizes = parseInt(pageSize, 10) || 10;
 
         // Ensure 'skip' and 'take' are integers and provide defaults
         // const skipRecords = parseInt(skip, 10) || 0;
         // const takeRecords = parseInt(take, 10) || 100;
-
+        let tenantId;
         let whereCondition = {
-            tenantId: null,
             deletedAt: null,
         };
         if (req.user.type != 'Main Admin') {
-            whereCondition.tenantId = req.user.tenantId;
+            tenantId = req.user.tenantId;
             whereCondition.email = {
                 [Op.ne]: process.env.EMAIL,
             };
-            whereCondition.id = {
-                [Op.ne]: req.user.id,
-            };
+        } else {
+            tenantId = null;
         }
+        whereCondition.tenantId = tenantId;
 
-        if (startDate && endDate) {
-            whereCondition.createdAt = {
-                [Op.between]: [firstDate, lastDate],
-            };
-        } else if (startDate) {
-            whereCondition.createdAt = {
-                [Op.gte]: firstDate,
-            };
-        } else if (endDate) {
-            whereCondition.createdAt = {
-                [Op.lte]: lastDate,
-            };
-        }
+        whereCondition.id = {
+            [Op.ne]: req.user.id,
+        };
 
-        if (firstName) {
-            whereCondition.firstName = {
-                [Op.like]: `%${firstName}%`,
-            };
-        }
+        // if (startDate && endDate) {
+        //     whereCondition.createdAt = {
+        //         [Op.between]: [firstDate, lastDate],
+        //     };
+        // } else if (startDate) {
+        //     whereCondition.createdAt = {
+        //         [Op.gte]: firstDate,
+        //     };
+        // } else if (endDate) {
+        //     whereCondition.createdAt = {
+        //         [Op.lte]: lastDate,
+        //     };
+        // }
 
-        if (lastName) {
-            whereCondition.lastName = {
-                [Op.like]: `%${lastName}%`,
-            };
-        }
+        // if (firstName) {
+        //     whereCondition.firstName = {
+        //         [Op.like]: `%${firstName}%`,
+        //     };
+        // }
+
+        // if (lastName) {
+        //     whereCondition.lastName = {
+        //         [Op.like]: `%${lastName}%`,
+        //     };
+        // }
 
         // if (mobile) {
         //     whereCondition.mobile = {
@@ -809,11 +802,11 @@ exports.getAllUser = async (req, res) => {
         //     };
         // }
 
-        if (email) {
-            whereCondition.email = {
-                [Op.like]: `%${email}%`,
-            };
-        }
+        // if (email) {
+        //     whereCondition.email = {
+        //         [Op.like]: `%${email}%`,
+        //     };
+        // }
 
         if (isActive) {
             whereCondition.status = {
@@ -821,91 +814,82 @@ exports.getAllUser = async (req, res) => {
             };
         }
 
-        if (search) {
-            whereCondition[Op.or] = [
-                { firstName: { [Op.like]: `%${search}%` } },
-                { lastName: { [Op.like]: `%${search}%` } },
-                // { mobile: { [Op.like]: `%${search}%` } },
-                { email: { [Op.like]: `%${search}%` } },
-            ];
-        }
+        // if (search) {
+        //     whereCondition[Op.or] = [
+        //         { firstName: { [Op.like]: `%${search}%` } },
+        //         { lastName: { [Op.like]: `%${search}%` } },
+        //         // { mobile: { [Op.like]: `%${search}%` } },
+        //         { email: { [Op.like]: `%${search}%` } },
+        //     ];
+        // }
 
         const users = await db.User.findAll({
             attributes: [
-              'id',
-              'firstName',
-              'lastName',
-              'email',
-              'profileImage',
-              'status',
-              'createdAt',
-              'updatedAt',
-              [fn('COUNT', col('userPhones.phoneId')), 'phoneCount'],
+                'id',
+                'firstName',
+                'lastName',
+                'email',
+                'profileImage',
+                'status',
+                'createdAt',
+                'updatedAt',
+                [fn('COUNT', col('userPhones.phoneId')), 'phoneCount'],
             ],
-            where:whereCondition,
-            include: [
-              {
-                model: db.Role,
-                    as: 'Role',
-                    attributes: ['name'],
-                required: false,       
-              },
-              {
-                model: db.UserPhones,
-                as: 'userPhones',    
-                attributes: [],
-                required: false,        
-              },
-              {
-                model:db.Department,
-                    as:'Department',   
-                attributes: ['id', 'name'],
-                required: false,        
-              },
-            ],
-            group: [
-              'User.id',
-              'Role.id',
-              'Department.id',
-            ],
-            order: [['createdAt', 'DESC']],
-            disableTenantCheck:true
-          });
-
-
-
-
-       const findAll = await User.findAll({
-            attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt','updatedAt'],
-            where: {
-                ...whereCondition,
-            },
+            where: whereCondition,
             include: [
                 {
                     model: db.Role,
                     as: 'Role',
                     attributes: ['name'],
+                    required: false,
                 },
                 {
                     model: db.UserPhones,
                     as: 'userPhones',
-                    attributes: ['phoneId'],
+                    attributes: [],
+                    required: false,
                 },
                 {
-                    model:db.Department,
-                    as:'Department',
-                    attributes:['id','name']
-                }
+                    model: db.Department,
+                    as: 'Department',
+                    attributes: ['id', 'name'],
+                    required: false,
+                },
             ],
-            disableTenantCheck: true,
+            group: ['User.id', 'Role.id', 'Department.id'],
             order: [['createdAt', 'DESC']],
-            limit: pageSizes,
-            offset: (pages - 1) * pageSizes,
-        }); 
+            disableTenantCheck: true,
+        });
 
-       
-        if (findAll.length === 0) {
-            await transaction.rollback();
+        // const findAll = await User.findAll({
+        //     attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt', 'updatedAt'],
+        //     where: {
+        //         ...whereCondition,
+        //     },
+        //     include: [
+        //         {
+        //             model: db.Role,
+        //             as: 'Role',
+        //             attributes: ['name'],
+        //         },
+        //         {
+        //             model: db.UserPhones,
+        //             as: 'userPhones',
+        //             attributes: ['phoneId'],
+        //         },
+        //         {
+        //             model: db.Department,
+        //             as: 'Department',
+        //             attributes: ['id', 'name'],
+        //         },
+        //     ],
+        //     disableTenantCheck: true,
+        //     order: [['createdAt', 'DESC']],
+        //     limit: pageSizes,
+        //     offset: (pages - 1) * pageSizes,
+        // });
+
+        if (users.length === 0) {
             return res.status(status.OK).json({
                 status: true,
                 message: 'No data found!',
@@ -917,45 +901,48 @@ exports.getAllUser = async (req, res) => {
         // let response = {
         //     user: findAll,
         // };
-        await transaction.commit();
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',
             data: response,
         });
     } catch (err) {
-                await transaction.rollback();
         return common.throwException(err, 'Get User List Api', req, res);
     }
 };
 
 exports.getAllData = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         let tenantId;
         if (req.user.type != 'Main Admin') {
             tenantId = req.user.tenantId;
-        }else{
+        } else {
             tenantId = null;
         }
-        const findCount = await User.count({ where:{id: { [Op.ne]: req.user.id },tenantId:tenantId,deletedAt:null}, disableTenantCheck: true,  });
+        const findCount = await User.count({
+            where: { id: { [Op.ne]: req.user.id }, tenantId: tenantId, deletedAt: null },
+            disableTenantCheck: true,
+        });
         const phoneCount = await db.Phones.count({
-            where: { tenantId:tenantId},
+            where: { tenantId: tenantId },
             disableTenantCheck: true,
         });
 
         const activeuserCount = await User.count({
-            where: { tenantId:tenantId, status: '1', deletedAt: null, id: { [Op.ne]: req.user.id } },
+            where: { tenantId: tenantId, status: '1', deletedAt: null, id: { [Op.ne]: req.user.id } },
             disableTenantCheck: true,
         });
         const inactiveuserCount = await User.count({
-            // where: { tenantId: req.user.tenantId, [Op.or]:{status: '0', deletedAt: {[Op.ne]:null}} },
-            where: { tenantId:tenantId, status: '0', deletedAt:null },
-
+            where: {
+                tenantId: tenantId,
+                status: '0',
+                deletedAt: null,
+                id: { [Op.ne]: req.user.id },
+            },
             disableTenantCheck: true,
-            id: { [Op.ne]: req.user.id },
         });
-        const departmentCount = await db.Department.count({ where: { tenantId:tenantId }, disableTenantCheck: true });
+
+        const departmentCount = await db.Department.count({ where: { tenantId: tenantId }, disableTenantCheck: true });
 
         let response = {
             totalUser: findCount,
@@ -965,14 +952,12 @@ exports.getAllData = async (req, res) => {
             department: departmentCount,
         };
 
-        await transaction.commit();
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',
             data: response,
         });
     } catch (err) {
-                await transaction.rollback();
         return common.throwException(err, 'Get User List Api', req, res);
     }
 };

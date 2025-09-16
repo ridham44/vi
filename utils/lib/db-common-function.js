@@ -390,7 +390,6 @@ module.exports = {
             const associated = await model.count({
                 where: {
                     [column]: id,
-                    // tenantId: tenantId,
                     deletedAt: null,
                 },
                 disableTenantCheck: true,

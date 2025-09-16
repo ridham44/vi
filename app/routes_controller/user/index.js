@@ -68,6 +68,9 @@ router.post('/reset-password', resetPasswordRules(), expressValidate, controller
 
 router.get('/user-list', auth, controller.getAllUser);
 
+router.get('/user-summary', auth, controller.getAllData);
+
+
 router.post('/user', auth, uploads.single('profileImage'), multerMiddleware, validationRules(), expressValidate, controller.createUser);
 
 router.put(

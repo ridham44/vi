@@ -14,4 +14,6 @@ module.exports = {
     Addpackages: 'd1234567-89ab-4cde-8f01-234567890fed',
     AddPhone:'c0bcd9c5-8a28-11f0-87c0-74d83e9d1674',
     Phone:'91a50a22-8a28-11f0-87c0-74d83e9d1674',
+    Role_Rights:'21eee5da-8a1f-11f0-87c0-74d83e9d1674',
+    Add_Role_Rights:'9bd70502-8a1f-11f0-87c0-74d83e9d1674'
 };

@@ -190,7 +190,7 @@ exports.getAllPhones = async (req, res) => {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
         const findAll = await db.Phones.findAll({
-            attributes: ['id', 'name', 'number', 'countryCode', 'createdAt'],
+            attributes: ['id', 'name', 'number', 'countryCode', 'createdAt','updatedAt'],
             where: {
                 ...whereCondition,
             },
@@ -238,6 +238,14 @@ exports.getAllPhones = async (req, res) => {
 exports.getAllPhonesByDepartment = async (req, res) => {
     try {
         const { departmentIds } = req.body;
+        if(departmentIds.length<=0){
+            return res.status(status.OK).json({
+                status: false,
+                message: 'no data found',
+                data:[],
+            });
+        }
+        
 
         const phones = await db.Phones.findAll({
             where: {

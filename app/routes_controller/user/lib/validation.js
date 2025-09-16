@@ -39,7 +39,7 @@ const updateValidationRules = () => {
 
 const changePasswordRules = () => {
     return [
-        body('oldPassword').notEmpty().trim().withMessage('Old Password is required.'),
+        body('oldPassword').notEmpty().withMessage('Old Password is required.'),
         body('newPassword').notEmpty().withMessage('New Password is required'),
         body('confirmPassword').notEmpty().withMessage('Confirm Password is required'),
     ];

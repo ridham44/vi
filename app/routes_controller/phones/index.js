@@ -16,7 +16,9 @@ router.post('/phone', auth, authPermission([modules.AddPhone]), validationRules(
 router.get('/phone', auth, controller.getAllPhones);
 
 //get all phone  numbers by department
-router.post('/phone/by-department', auth, getPhoneValidationRules(), expressValidate, controller.getAllPhonesByDepartment);
+// router.post('/phone/by-department', auth, getPhoneValidationRules(), expressValidate, controller.getAllPhonesByDepartment);
+
+router.post('/phone/by-department', auth,controller.getAllPhonesByDepartment);
 
 // //update routes
 router.put('/phone/:id', auth, authPermission([modules.AddPhone]), updateValidationRules(), expressValidate, controller.updatePhone);

@@ -199,7 +199,7 @@ exports.getAllpackages = async (req, res) => {
         }
 
         const findAll = await db.Packages.findAll({
-            attributes: ['id', 'packagesName', 'packagesDescription', 'packagesAmount', 'noOfMonths', 'status', 'createdAt'],
+            attributes: ['id', 'packagesName', 'packagesDescription', 'packagesAmount', 'noOfMonths', 'status', 'createdAt','updatedAt'],
             where: whereCondition,
             order: [['createdAt', 'DESC']],
             limit: pageSizes,

@@ -143,7 +143,6 @@ exports.deletePhone = async (req, res) => {
 };
 
 exports.getPhone = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const { id } = req.params;
 
@@ -153,28 +152,23 @@ exports.getPhone = async (req, res) => {
                 deletedAt: null,
             },
             disableTenantCheck: true,
-            transaction,
         });
 
         if (!checkExist) {
-            await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'Phone is not found' });
         }
 
-        await transaction.commit();
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',
             data: checkExist,
         });
     } catch (err) {
-        await transaction.rollback();
         return common.throwException(err, 'Get Phone Api', req, res);
     }
 };
 
 exports.getAllPhones = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const { search } = req.query;
 
@@ -186,11 +180,9 @@ exports.getAllPhones = async (req, res) => {
         } else {
             whereCondition.tenantId = req.user.tenantId;
         }
-        if (search) {
-            whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
-        }
+
         const findAll = await db.Phones.findAll({
-            attributes: ['id', 'name', 'number', 'countryCode', 'createdAt','updatedAt'],
+            attributes: ['id', 'name', 'number', 'countryCode', 'createdAt', 'updatedAt'],
             where: {
                 ...whereCondition,
             },
@@ -212,7 +204,6 @@ exports.getAllPhones = async (req, res) => {
         const findCount = await db.Phones.count({ where: whereCondition, disableTenantCheck: true });
 
         if (findAll.length === 0) {
-            await transaction.rollback();
             return res.status(status.OK).json({
                 status: true,
                 message: 'No data found!',
@@ -223,14 +214,12 @@ exports.getAllPhones = async (req, res) => {
             totalCount: findCount,
         };
 
-        await transaction.commit();
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',
             data: response,
         });
     } catch (err) {
-        await transaction.rollback();
         return common.throwException(err, 'Get phone List Api', req, res);
     }
 };
@@ -238,14 +227,13 @@ exports.getAllPhones = async (req, res) => {
 exports.getAllPhonesByDepartment = async (req, res) => {
     try {
         const { departmentIds } = req.body;
-        if(departmentIds.length<=0){
+        if (departmentIds.length <= 0) {
             return res.status(status.OK).json({
                 status: false,
                 message: 'no data found',
-                data:[],
+                data: [],
             });
         }
-        
 
         const phones = await db.Phones.findAll({
             where: {

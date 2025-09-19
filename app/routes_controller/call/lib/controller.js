@@ -87,7 +87,6 @@ exports.inboundCall = async (req, res) => {
     }
 };
 exports.callFilter = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const {
             fromDate,
@@ -98,15 +97,16 @@ exports.callFilter = async (req, res) => {
             callStatus,
             callBack,
             departmentId,
-            agentId,
+            // agentId,
             simNumber,
             callNumber,
             minDuration,
             maxDuration,
+            limit,
             searchInArchive,
         } = req.body;
 
-        const whereClause = { tenantId: req.user.tenantId };
+        const whereClause = { tenantId: req.user.tenantId, deletedAt: null };
 
         if (fromDate && toDate) {
             whereClause.callStartTime = {
@@ -138,12 +138,24 @@ exports.callFilter = async (req, res) => {
             whereClause.departmentId = departmentId;
         }
 
-        if (agentId) {
-            whereClause.agentId = agentId;
-        }
+        // if (agentId) {
+        //     whereClause.agentId = agentId;
+        // }
 
-        if (simNumber) {
-            whereClause[Op.or] = [{ callingNumber: simNumber }, { calledNumber: simNumber }];
+        if (simNumber.length > 0) {
+            const phones = await db.Phones.findAll({
+                attributes: ['number'],
+                where: {
+                    id: {
+                        [Op.in]: simNumber,
+                    },
+                },
+                raw: true,
+                disableTenantCheck: true,
+            });
+            const phoneNumbers = phones.map((p) => p.number);
+
+            whereClause.agentId = { [Op.in]: phoneNumbers };
         }
 
         if (callNumber) {
@@ -156,108 +168,78 @@ exports.callFilter = async (req, res) => {
             };
         }
 
-        if (!searchInArchive) {
-            whereClause.deletedAt = null;
-        }
-
-        const result = await db.CallDetails.findAll({
+        // if (!searchInArchive) {
+        //     whereClause.deletedAt = null;
+        // }
+        const stats = await db.CallDetails.findOne({
             attributes: [
-                'callType',
-                [fn('COUNT', literal('*')), 'total_calls'],
-                [fn('COUNT', literal(`CASE WHEN callStatus = 'ANSWERED' THEN 1 END`)), 'answered'],
-                [fn('COUNT', literal(`CASE WHEN callStatus = 'MISSED' THEN 1 END`)), 'missed'],
-                [fn('COUNT', literal(`CASE WHEN callStatus = 'NOT ANSWERED' THEN 1 END`)), 'not_answered'],
-                [fn('COUNT', literal(`CASE WHEN callStatus = 'BUSY' THEN 1 END`)), 'busy'],
-                [fn('COUNT', literal(`CASE WHEN callStatus = 'NOT-REACHABLE' THEN 1 END`)), 'not_reachable'],
+                [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'totalCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'IN'")), 0), 'inboundCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'OUT'")), 0), 'outboundCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'ANSWERED'")), 0), 'answeredCalls'],
+                [
+                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT ANSWERED'")), 0),
+                    'notAnsweredCalls',
+                ],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'MISSED'")), 0), 'missedCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'BUSY'")), 0), 'busyCalls'],
+                [
+                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT REACHABLE'")), 0),
+                    'notReachableCalls',
+                ],
             ],
-            group: ['callType'],
             where: whereClause,
+            limit: limit,
             disableTenantCheck: true,
             raw: true,
         });
 
-        const response = {
-            inbound: { totalCalls: 0, answered: 0, missed: 0, notAnswered: 0, busy: 0 },
-            outbound: { totalCalls: 0, answered: 0, missed: 0, notAnswered: 0, busy: 0, notReachable: 0 },
-            summary: { totalCalls: 0, uniqueCalls: 0 },
-        };
-
-        result.forEach((row) => {
-            if (row.callType === 'IN') {
-                response.inbound.totalCalls = Number(row.total_calls);
-                response.inbound.answered = Number(row.answered);
-                response.inbound.missed = Number(row.missed);
-                response.inbound.notAnswered = Number(row.not_answered);
-                response.inbound.busy = Number(row.busy);
-            }
-            if (row.callType === 'OUT') {
-                response.outbound.totalCalls = Number(row.total_calls);
-                response.outbound.answered = Number(row.answered);
-                response.outbound.missed = Number(row.missed);
-                response.outbound.notAnswered = Number(row.not_answered);
-                response.outbound.busy = Number(row.busy);
-                response.outbound.notReachable = Number(row.not_reachable);
-            }
-
-            response.summary.totalCalls += Number(row.total_calls);
-        });
-
-        const uniqueCalls = await db.CallDetails.count({
-            distinct: true,
-            col: 'callingNumber',
+        const result = await db.CallDetails.findAll({
+            attributes: [
+                'sourcePbxCallId',
+                'agentId',
+                'callType',
+                'callBack',
+                'callConnected',
+                'conversationDuration',
+                'callStartTime',
+                'callEndTime',
+                'callStatus',
+                'ringDuration',
+                'voiceFilePath',
+                'stationId',
+                [
+                    db.sequelize.literal(`CASE 
+                        WHEN callType = 'IN' THEN callingNumber
+                        WHEN callType = 'OUT' THEN calledNumber
+                        ELSE NULL END`),
+                    'caller',
+                ],
+            ],
             where: whereClause,
+            limit: limit,
             disableTenantCheck: true,
         });
-        response.summary.uniqueCalls = uniqueCalls;
 
-        await transaction.commit();
+        const formattedStats = {
+            inbound: Number(stats.inboundCalls) || 0,
+            outbound: Number(stats.outboundCalls) || 0,
+            answered: Number(stats.answeredCalls) || 0,
+            not_answered: Number(stats.notAnsweredCalls) || 0,
+            missed: Number(stats.missedCalls) || 0,
+            busy: Number(stats.busyCalls) || 0,
+            not_reachable: Number(stats.notReachableCalls) || 0,
+            total_calls: Number(stats.totalCalls) || 0,
+        };
+        let response = {
+            call_details: {
+                counts: formattedStats,
+                data: result,
+            },
+        };
         return res.status(status.OK).json({ data: response });
     } catch (err) {
         console.log(err);
-        await transaction.rollback();
         return common.throwException(err, 'fetch Call Details Api', req, res);
-    }
-};
-
-exports.callLogs = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
-    try {
-        const { fromDate, toDate, callType, agentId } = req.body;
-
-        const whereClause = {};
-
-        if (fromDate && toDate) {
-            whereClause.callStartTime = {
-                [Op.between]: [new Date(fromDate), new Date(toDate)],
-            };
-        }
-
-        if (callType) {
-            whereClause.callType = callType;
-        }
-
-        // if (status) {
-        //     whereClause.status = status;
-        // }
-
-        if (agentId) {
-            whereClause.agentId = agentId;
-        }
-
-        const calls = await db.CallLogs.findAll({
-            where: whereClause,
-            order: [['callStartTime', 'DESC']],
-        });
-
-        res.json({
-            success: true,
-            total: calls.length,
-            data: calls,
-        });
-
-        return res.status(status.OK).json({ data: calls });
-    } catch (err) {
-        await transaction.rollback();
-        return common.throwException(err, 'fetch Call Details  Api', req, res);
     }
 };

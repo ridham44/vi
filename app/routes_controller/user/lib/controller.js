@@ -260,12 +260,14 @@ exports.forgotPassword = async (req, res) => {
 
         if (!user) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ status: false, message: 'User not found' });
+            return res.status(status.NotFound).json({ status: false, message: 'No account found with this email address' });
         }
 
         // Generate secure token
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+        await db.ForgotPassword.update({ used: 1 }, { where: { userId: user.id } }, { transaction });
 
         // Save token in forgot_password table
         await db.ForgotPassword.create(
@@ -284,7 +286,7 @@ exports.forgotPassword = async (req, res) => {
         });
         const mailOptions = {
             to: email?.toLowerCase(),
-            subject: 'Forgot Password',
+            subject: 'Reset your CHPL account password',
             html: htmlToSend,
         };
         await common.sendEmail(mailOptions);
@@ -410,22 +412,22 @@ exports.createUser = async (req, res) => {
             await transaction.rollback();
             return res.status(status.Conflict).json({ status: false, message: 'Email already exists!' });
         }
+        if (req.user.type != 'Main Admin') {
+            const checkDepartmentExist = await db.Department.findOne({
+                where: {
+                    id: req.body.departmentId,
+                    deletedAt: null,
+                    tenantId: req.user.tenantId,
+                },
+                disableTenantCheck: true,
+                transaction,
+            });
 
-        const checkDepartmentExist = await db.Department.findOne({
-            where: {
-                id: req.body.departmentId,
-                deletedAt: null,
-                tenantId: req.user.tenantId,
-            },
-            disableTenantCheck: true,
-            transaction,
-        });
-
-        if (!checkDepartmentExist) {
-            await transaction.rollback();
-            return res.status(status.Conflict).json({ status: false, message: 'Department not exists!' });
+            if (!checkDepartmentExist) {
+                await transaction.rollback();
+                return res.status(status.Conflict).json({ status: false, message: 'Department not exists!' });
+            }
         }
-
         const checkRoleExist = await db.Role.findOne({
             where: {
                 id: req.body.roleId,
@@ -454,18 +456,19 @@ exports.createUser = async (req, res) => {
             tenantId: req.user.tenantId,
         };
         const user = await User.create(payload, { transaction });
+        if (phoneIds) {
+            let phonesArray = [];
 
-        let phonesArray = [];
-
-        phoneIds.forEach(async (i) => {
-            phonesArray.push({
-                userId: user.id,
-                phoneId: i,
-                createdBy: req.user.id,
+            phoneIds.forEach(async (i) => {
+                phonesArray.push({
+                    userId: user.id,
+                    phoneId: i,
+                    createdBy: req.user.id,
+                });
             });
-        });
 
-        await db.UserPhones.bulkCreate(phonesArray, { transaction });
+            await db.UserPhones.bulkCreate(phonesArray, { transaction });
+        }
 
         const template = await common.getTemplateByName('email.html');
         const htmlToSend = template({

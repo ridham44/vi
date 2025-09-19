@@ -3,11 +3,10 @@ const auth = require('../../middlewares/middleware');
 const controller = require('./lib/controller');
 
 // get all call logs
-router.get('/calls/summary', auth, controller.inboundCall);
+// router.get('/calls/summary', auth, controller.inboundCall);
 
-//filter calls 
+//filter calls
 router.post('/calls/filter', auth, controller.callFilter);
-
-// router.post('/calls/logs',auth,controller.callLogs);
+// router.get('/calls/summary', auth, controller.callstat);
 
 module.exports = router;

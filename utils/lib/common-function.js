@@ -45,7 +45,7 @@ module.exports = {
      */
     async sendEmail(mailOptions) {
         try {
-            mailOptions.from = process.env.MailAuthEmail;
+            mailOptions.from = `"CHPL Support" <${process.env.MailAuthEmail}>`;
             const transporter = nodemailer.createTransport({
                 host: process.env.MailHost,
                 port: process.env.MailPort,

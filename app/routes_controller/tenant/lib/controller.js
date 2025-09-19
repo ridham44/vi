@@ -85,17 +85,17 @@ exports.createTenant = async (req, res) => {
             transaction,
             disableTenantCheck: true,
         });
-        if (checksuperemailExist) {
-            return res.status(status.Conflict).json({
-                status: false,
-                message: 'Email already exists!',
-            });
-        }
         if (checkExist) {
             await transaction.rollback();
             return res.status(status.Conflict).json({
                 status: false,
                 message: 'Tenant already exists!',
+            });
+        }
+        if (checksuperemailExist) {
+            return res.status(status.Conflict).json({
+                status: false,
+                message: 'Email already exists!',
             });
         }
 
@@ -149,7 +149,7 @@ exports.createTenant = async (req, res) => {
         const tenant = await db.Tenant.create(tenantPayload, { transaction });
 
         const rolePayload = {
-            name: 'Tenant',
+            name: 'Admin',
             isSystemAdmin: false,
             isAdmin: true,
             isMasterAdmin: false,
@@ -487,43 +487,43 @@ exports.getAllTenant = async (req, res) => {
 
         let whereCondition = { deletedAt: null };
 
-        if (firstDate && lastDate) {
-            whereCondition.createdAt = { [Op.between]: [firstDate, lastDate] };
-        } else if (firstDate) {
-            whereCondition.createdAt = { [Op.gte]: firstDate };
-        } else if (lastDate) {
-            whereCondition.createdAt = { [Op.lte]: lastDate };
-        }
+        // if (firstDate && lastDate) {
+        //     whereCondition.createdAt = { [Op.between]: [firstDate, lastDate] };
+        // } else if (firstDate) {
+        //     whereCondition.createdAt = { [Op.gte]: firstDate };
+        // } else if (lastDate) {
+        //     whereCondition.createdAt = { [Op.lte]: lastDate };
+        // }
 
-        if (companyName) {
-            whereCondition.companyName = { [Op.like]: `%${companyName}%` };
-        }
-        if (address) {
-            whereCondition.address = { [Op.like]: `%${address}%` };
-        }
-        if (phone) {
-            whereCondition.phone = { [Op.like]: `%${phone}%` };
-        }
-        if (email) {
-            whereCondition.email = { [Op.like]: `%${email}%` };
-        }
-        if (isActive) {
-            whereCondition.status = isActive;
-        }
+        // if (companyName) {
+        //     whereCondition.companyName = { [Op.like]: `%${companyName}%` };
+        // }
+        // if (address) {
+        //     whereCondition.address = { [Op.like]: `%${address}%` };
+        // }
+        // if (phone) {
+        //     whereCondition.phone = { [Op.like]: `%${phone}%` };
+        // }
+        // if (email) {
+        //     whereCondition.email = { [Op.like]: `%${email}%` };
+        // }
+        // if (isActive) {
+        //     whereCondition.status = isActive;
+        // }
 
-        if (countryCode) {
-            whereCondition.countryCode = countryCode;
-        }
+        // if (countryCode) {
+        //     whereCondition.countryCode = countryCode;
+        // }
 
-        if (search) {
-            whereCondition[Op.or] = [
-                { companyName: { [Op.like]: `%${search}%` } },
-                { address: { [Op.like]: `%${search}%` } },
-                { phone: { [Op.like]: `%${search}%` } },
-                { email: { [Op.like]: `%${search}%` } },
-                { countryCode: { [Op.like]: `%${search}%` } },
-            ];
-        }
+        // if (search) {
+        //     whereCondition[Op.or] = [
+        //         { companyName: { [Op.like]: `%${search}%` } },
+        //         { address: { [Op.like]: `%${search}%` } },
+        //         { phone: { [Op.like]: `%${search}%` } },
+        //         { email: { [Op.like]: `%${search}%` } },
+        //         { countryCode: { [Op.like]: `%${search}%` } },
+        //     ];
+        // }
 
         const tenants = await db.Tenant.findAll({
             where: whereCondition,

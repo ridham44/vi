@@ -3,24 +3,26 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.bulkUpdate(
-            'menu_order_role',
+            'menu_order',
             {
-                deletedAt: new Date(),
+                forWhom: 'Tenant',
+                updatedAt: new Date(),
             },
             {
-                id: '5448f4aa-4823-419f-adbb-d4576ba86128',
+                id: 'c19ec780-7a3a-4021-98c7-e9195f53caf4',
             }
         );
     },
 
     async down(queryInterface, Sequelize) {
         await queryInterface.bulkUpdate(
-            'menu_order_role',
+            'menu_order',
             {
-                deletedAt: null,
+                forWhom: 'Both',
+                updatedAt: new Date(),
             },
             {
-                id: '5448f4aa-4823-419f-adbb-d4576ba86128',
+                id: 'c19ec780-7a3a-4021-98c7-e9195f53caf4',
             }
         );
     },

@@ -264,15 +264,15 @@ exports.callFilter = async (req, res) => {
                     'caller',
                 ],
                 [db.sequelize.literal(`SEC_TO_TIME(conversationDuration)`), 'conversationDuration'],
-                // [
-                //     db.sequelize.literal(`(
-                //         SELECT "name"
-                //         FROM "Phones"
-                //         WHERE "Phones"."number" = "CallDetails"."agentId"
-                //         LIMIT 1
-                //     )`),
-                //     'agentName',
-                // ],
+                [
+                    db.sequelize.literal(`(
+                      SELECT \`name\`
+                      FROM \`phones\`
+                      WHERE \`phones\`.\`number\` = \`CallDetails\`.\`agentId\`
+                      LIMIT 1
+                    )`),
+                    'agentName',
+                ],
             ],
             where: whereClause,
             limit: limit,

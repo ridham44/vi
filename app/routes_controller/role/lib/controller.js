@@ -81,7 +81,15 @@ exports.updateStatus = async (req, res) => {
             await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
         }
-
+        console.log(checkExist.status);
+        if (checkExist.status == enums.Status.Active.value) {
+            let count = await dbCommon.checkAssociation(id, 'roleId');
+            if (count > 0) {
+                return res.status(status.BadRequest).json({
+                    message: 'Cannot InActive this Role. It is associated with other records.',
+                });
+            }
+        }
         checkExist.set({
             status: checkExist.status === enums.Status.Active.value ? enums.Status.Inactive.value : enums.Status.Active.value,
             updatedBy: req.user.id,
@@ -317,7 +325,7 @@ exports.getAllRole = async (req, res) => {
             whereCondition[Op.or] = [{ name: { [Op.like]: `%${search}%` } }];
         }
         const findAll = await db.Role.findAll({
-            attributes: ['id', 'name', 'description', 'status', 'createdAt','updatedAt'],
+            attributes: ['id', 'name', 'description', 'status', 'createdAt', 'updatedAt'],
             where: {
                 ...whereCondition,
             },

@@ -81,7 +81,7 @@ exports.findAll = async (req, res) => {
                     model: db.MenuOrder,
                     as: 'MenuOrder',
                     required: true,
-                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level'],
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'forWhom'],
                     where: {
                         parentId: null,
                         type: enums.MenuOrderType.Group,
@@ -107,7 +107,7 @@ exports.findAll = async (req, res) => {
                     model: db.MenuOrder,
                     as: 'MenuOrder',
                     required: true,
-                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId'],
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId', 'forWhom'],
                     where: {
                         [Op.and]: [
                             { parentId: { [Op.in]: parentMenuIds } },
@@ -160,7 +160,7 @@ exports.findAllRoute = async (req, res) => {
             where: {
                 roleId: req.user.roleId,
                 status: enums.Status.Active.value,
-                deletedAt:null
+                deletedAt: null,
             },
             attributes: [],
             include: [

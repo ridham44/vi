@@ -108,13 +108,21 @@ app.use((req, res, next) => {
 });
 
 //* Checks if folders exist else create folders for static files
-let folders = ['uploads'];
-folders.forEach((f) => {
-    if (!fs.existsSync(f)) {
-        fs.mkdirSync(f);
+// let folders = ['uploads'];
+// folders.forEach((f) => {
+//     if (!fs.existsSync(f)) {
+//         fs.mkdirSync(f);
+//     }
+// });
+
+const folders = ['uploads', 'uploads/recording'];
+
+folders.forEach((folder) => {
+    if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder, { recursive: true }); // recursive ensures parent folders are created if missing
+        console.log(`Folder created: ${folder}`);
     }
 });
-
 //* Sequelize Connection and Sync
 db.sequelize
     .authenticate()

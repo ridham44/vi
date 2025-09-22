@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Sequelize, fn, literal } = require('sequelize');
+const { Sequelize, fn, literal, NUMBER } = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
 const { status, common } = require('../../../../utils');
@@ -171,12 +171,61 @@ exports.callFilter = async (req, res) => {
         // if (!searchInArchive) {
         //     whereClause.deletedAt = null;
         // }
+
+        // const getPreviousDateRange = async (fromDate, toDate) => {
+        //     // Convert to Date objects
+        //     const start = new Date(fromDate);
+        //     const end = new Date(toDate);
+
+        //     // Calculate range length in days (inclusive)
+        //     const diffTime = end.getTime() - start.getTime();
+        //     const daysCount = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        //     // Subtract the same number of days from both
+        //     const prevStart = new Date(start);
+        //     prevStart.setDate(start.getDate() - daysCount);
+
+        //     const prevEnd = new Date(end);
+        //     prevEnd.setDate(end.getDate() - daysCount);
+
+        //     // Format YYYY-MM-DD
+        //     // const formatDate = (d) => d.toISOString().split('T')[0]; // returns YYYY-MM-DD
+        //     // console.log('past date', prevStart);
+
+        //     return {
+        //         startDate: prevStart,
+        //         endDate: prevEnd,
+        //     };
+        // };
+
         const stats = await db.CallDetails.findOne({
             attributes: [
                 [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'totalCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'IN'")), 0), 'inboundCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'OUT'")), 0), 'outboundCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'ANSWERED'")), 0), 'answeredCalls'],
+                // [
+                //     db.sequelize.fn(
+                //         'COALESCE',
+                //         db.sequelize.fn(
+                //             'SUM',
+                //             db.sequelize.literal("CASE WHEN callStatus = 'ANSWERED' AND callType = 'IN' THEN 1 ELSE 0 END")
+                //         ),
+                //         0
+                //     ),
+                //     'inansweredCalls',
+                // ],
+                // [
+                //     db.sequelize.fn(
+                //         'COALESCE',
+                //         db.sequelize.fn(
+                //             'SUM',
+                //             db.sequelize.literal("CASE WHEN callStatus = 'ANSWERED' AND callType = 'OUT' THEN 1 ELSE 0 END")
+                //         ),
+                //         0
+                //     ),
+                //     'outansweredCalls',
+                // ],
                 [
                     db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT ANSWERED'")), 0),
                     'notAnsweredCalls',
@@ -184,7 +233,7 @@ exports.callFilter = async (req, res) => {
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'MISSED'")), 0), 'missedCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'BUSY'")), 0), 'busyCalls'],
                 [
-                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT REACHABLE'")), 0),
+                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT-REACHABLE'")), 0),
                     'notReachableCalls',
                 ],
             ],
@@ -201,7 +250,6 @@ exports.callFilter = async (req, res) => {
                 'callType',
                 'callBack',
                 'callConnected',
-                'conversationDuration',
                 'callStartTime',
                 'callEndTime',
                 'callStatus',
@@ -215,11 +263,22 @@ exports.callFilter = async (req, res) => {
                         ELSE NULL END`),
                     'caller',
                 ],
+                [db.sequelize.literal(`SEC_TO_TIME(conversationDuration)`), 'conversationDuration'],
+                // [
+                //     db.sequelize.literal(`(
+                //         SELECT "name"
+                //         FROM "Phones"
+                //         WHERE "Phones"."number" = "CallDetails"."agentId"
+                //         LIMIT 1
+                //     )`),
+                //     'agentName',
+                // ],
             ],
             where: whereClause,
             limit: limit,
             disableTenantCheck: true,
         });
+        // console.log('past count', pastCount.pasttotalCalls, 'curren count', stats.totalCalls);
 
         const formattedStats = {
             inbound: Number(stats.inboundCalls) || 0,
@@ -228,8 +287,14 @@ exports.callFilter = async (req, res) => {
             not_answered: Number(stats.notAnsweredCalls) || 0,
             missed: Number(stats.missedCalls) || 0,
             busy: Number(stats.busyCalls) || 0,
+            // in_answerd: Number(stats.inansweredCalls) || 0,
+            // out_answerd: Number(stats.outansweredCalls) || 0,
             not_reachable: Number(stats.notReachableCalls) || 0,
             total_calls: Number(stats.totalCalls) || 0,
+            // total_calls_percentage:
+            //     pastCount.pasttotalCalls > 0
+            //         ? ((Number(stats.totalCalls) - Number(pastCount.pasttotalCalls)) / Number(pastCount.pasttotalCalls)) * 100
+            //         : 0,
         };
         let response = {
             call_details: {

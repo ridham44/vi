@@ -170,7 +170,7 @@ exports.getPhone = async (req, res) => {
 
 exports.getAllPhones = async (req, res) => {
     try {
-        const { search } = req.query;
+       // const { search } = req.query;
 
         let whereCondition = {
             deletedAt: null,

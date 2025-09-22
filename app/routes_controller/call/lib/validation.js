@@ -1,19 +1,28 @@
 const { body } = require('express-validator');
 
-const updateValidationRules = () => {
+const callSummaryValidationRules = () => {
     return [
-        body('firstName').notEmpty().trim().withMessage('First Name is required.'),
-        body('lastName').notEmpty().trim().withMessage('Last Name is required.'),
-        body('mobile')
+        body('fromDate')
             .notEmpty()
-            .trim()
-            .withMessage('Mobile is required.')
-            .isMobilePhone(['en-IN'])
-            .withMessage('Enter a valid Mobile Number.'),
-        body('email').trim().notEmpty().withMessage('Email is required.').isEmail().withMessage('Enter a valid email'),
+            .withMessage('fromDate is required')
+            .isISO8601()
+            .withMessage('fromDate must be a valid date (YYYY-MM-DD)'),
+        body('toDate')
+            .notEmpty()
+            .withMessage('toDate is required')
+            .isISO8601()
+            .withMessage('toDate must be a valid date (YYYY-MM-DD)'),
+        body('agentId')
+            .optional()
+            .isString()
+            .withMessage('agentId must be a string'),
+        body('type')
+            .notEmpty()
+            .withMessage('type is required')
+            .withMessage("type must be there"),
     ];
 };
 
 module.exports = {
-    updateValidationRules,
+    callSummaryValidationRules,
 };

@@ -4,7 +4,7 @@ const controller = require('./lib/controller');
 const authPermission = require('../../middlewares/permission.middleware');
 const { modules } = require('../../../utils/index');
 
-const { validationRules, updateValidationRules, getPhoneValidationRules } = require('./lib/validation');
+const { validationRules, updateValidationRules, } = require('./lib/validation');
 // const { validationRules } = require('./lib/validation');
 
 const { expressValidate } = require('../../../utils/lib/common-function');

@@ -472,15 +472,17 @@ exports.deleteTenant = async (req, res) => {
 
 exports.getAllTenant = async (req, res) => {
     try {
-        const { companyName, address, phone, email, countryCode, status: isActive, page, pageSize, startDate, endDate, search } = req.query;
+        // const { companyName, address, phone, email, countryCode, status: isActive, page, pageSize, startDate, endDate, search } = req.query;
 
-        const dateFormat = 'YYYY-MM-DD';
-        const firstDate = startDate
-            ? moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss')
-            : null;
-        const lastDate = endDate
-            ? moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss')
-            : null;
+        const { page, pageSize } = req.query;
+
+        // const dateFormat = 'YYYY-MM-DD';
+        // const firstDate = startDate
+        //     ? moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss')
+        //     : null;
+        // const lastDate = endDate
+        //     ? moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss')
+        //     : null;
 
         const pages = parseInt(page, 10) || 1;
         const pageSizes = parseInt(pageSize, 10) || 10;

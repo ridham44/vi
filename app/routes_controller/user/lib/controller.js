@@ -5,7 +5,7 @@ const db = require('../../../db/models');
 const User = db.User;
 const { status, common, enums } = require('../../../../utils');
 const bcrypt = require('bcryptjs');
-const moment = require('moment-timezone');
+//const moment = require('moment-timezone');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
@@ -753,7 +753,10 @@ exports.getUser = async (req, res) => {
 
 exports.getAllUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
+        // const { firstName, lastName, email, page, pageSize, startDate, endDate, isActive, search } = req.query;
+
+        const { isActive } = req.query;
+
         // const dateFormat = 'YYYY-MM-DD';
         // const firstDate = moment.tz(`${startDate} 00:00:00`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
         // const lastDate = moment.tz(`${endDate} 23:59:59`, dateFormat + ' HH:mm:ss', 'Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');

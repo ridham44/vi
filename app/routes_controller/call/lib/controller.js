@@ -143,7 +143,7 @@ exports.callFilter = async (req, res) => {
         //     whereClause.agentId = agentId;
         // }
 
-        if (simNumber.length > 0) {
+        if (Array.isArray(simNumber) && simNumber.length > 0) {
             const phones = await db.Phones.findAll({
                 attributes: ['number'],
                 where: {
@@ -155,7 +155,6 @@ exports.callFilter = async (req, res) => {
                 disableTenantCheck: true,
             });
             const phoneNumbers = phones.map((p) => p.number);
-
             whereClause.agentId = { [Op.in]: phoneNumbers };
         }
 
@@ -248,12 +247,7 @@ exports.callFilter = async (req, res) => {
 exports.voiceActivity = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const {
-            fromDate,
-            toDate,
-            callType,
-            agentId,
-        } = req.body;
+        const { fromDate, toDate, callType, agentId } = req.body;
 
         const tenantId = req.user.tenantId;
         const whereClause = { tenantId, deletedAt: null };
@@ -285,7 +279,7 @@ exports.voiceActivity = async (req, res) => {
 
         const resultCurrent = await fetchStats(whereClause);
 
-        const diffDays = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1; 
+        const diffDays = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
         let prevFrom, prevTo;
 
         if (diffDays === 1) {
@@ -320,9 +314,9 @@ exports.voiceActivity = async (req, res) => {
             const prevMap = toMap(prev);
 
             const calcPct = (val, prevVal) => {
-                if (!prevVal && !val) return 0; 
-                if (!prevVal && val) return 100; 
-                if (prevVal && !val) return -100; 
+                if (!prevVal && !val) return 0;
+                if (!prevVal && val) return 100;
+                if (prevVal && !val) return -100;
                 return ((val - prevVal) / prevVal) * 100;
             };
 

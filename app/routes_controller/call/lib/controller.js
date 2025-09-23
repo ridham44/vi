@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Sequelize, fn, literal, NUMBER } = require('sequelize');
+const { Sequelize, fn, literal } = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
 const { status, common } = require('../../../../utils');
@@ -237,7 +237,7 @@ exports.callFilter = async (req, res) => {
                 ],
             ],
             where: whereClause,
-            limit: limit,
+            // limit: limit,
             disableTenantCheck: true,
             raw: true,
         });
@@ -274,7 +274,7 @@ exports.callFilter = async (req, res) => {
                 ],
             ],
             where: whereClause,
-            limit: limit,
+            // limit: limit,
             disableTenantCheck: true,
         });
         // console.log('past count', pastCount.pasttotalCalls, 'curren count', stats.totalCalls);

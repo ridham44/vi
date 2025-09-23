@@ -55,8 +55,6 @@ exports.createRole = async (req, res) => {
             message: 'Role created successfully.',
         });
     } catch (err) {
-        console.log(err);
-
         await transaction.rollback();
         return common.throwException(err, 'Create Role Api', req, res);
     }
@@ -81,7 +79,6 @@ exports.updateStatus = async (req, res) => {
             await transaction.rollback();
             return res.status(status.NotFound).json({ status: false, message: 'Role not found' });
         }
-        console.log(checkExist.status);
         if (checkExist.status == enums.Status.Active.value) {
             let count = await dbCommon.checkAssociation(id, 'roleId');
             if (count > 0) {
@@ -249,8 +246,6 @@ exports.getRole = async (req, res) => {
             data: checkExist,
         });
     } catch (err) {
-        console.log(err);
-
         await transaction.rollback();
         return common.throwException(err, 'Get Role Api', req, res);
     }

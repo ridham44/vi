@@ -36,7 +36,7 @@ exports.userLogin = async (req, res) => {
 
         if (!user) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ status: false, message: 'Invalid Email!' });
+            return res.status(status.NotFound).json({ status: false, message: 'User not found!' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -44,13 +44,13 @@ exports.userLogin = async (req, res) => {
             await transaction.rollback();
             return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
         }
-        let type;
+        // let type;
 
-        if (user.Role.isMasterAdmin) {
-            type = 'Main Admin';
-        } else {
-            type = user.Role.name;
-        }
+        // if (user.Role.isMasterAdmin) {
+        //     type = 'Main Admin';
+        // } else {
+        //     type = user.Role.name;
+        // }
 
         // const tokenPayload = {
         //     id: user.id,
@@ -95,11 +95,10 @@ exports.userLogin = async (req, res) => {
 
         return res.status(status.OK).json({
             status: true,
-            message: 'Login Success',
+            message: 'Login successful',
             data: userData,
         });
     } catch (err) {
-        console.log(err);
         await transaction.rollback();
         return common.throwException(err, 'User Login Api', req, res);
     }
@@ -448,8 +447,6 @@ exports.createUser = async (req, res) => {
             message: 'User created successfully.',
         });
     } catch (err) {
-        console.log(err);
-
         await transaction.rollback();
         return common.throwException(err, 'Create User Api', req, res);
     }
@@ -605,8 +602,6 @@ exports.updateUser = async (req, res) => {
             message: 'User updated successfully.',
         });
     } catch (err) {
-        console.log(err);
-
         await transaction.rollback();
         return common.throwException(err, 'Update User Api', req, res);
     }

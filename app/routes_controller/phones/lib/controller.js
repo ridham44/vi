@@ -46,7 +46,6 @@ exports.createPhone = async (req, res) => {
             tenantId: tenantId,
         };
         let Phone = await db.Phones.create(payload, { transaction });
-        console.log('phone id is ', Phone.id);
 
         const logpayload = {
             event: 'Create',
@@ -150,7 +149,6 @@ exports.updatePhone = async (req, res) => {
             message: 'Phone updated successfully.',
         });
     } catch (err) {
-
         await transaction.rollback();
         return common.throwException(err, 'Update phone Api', req, res);
     }

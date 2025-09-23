@@ -81,7 +81,6 @@ exports.inboundCall = async (req, res) => {
         await transaction.commit();
         return res.status(status.OK).json({ data: response });
     } catch (err) {
-        console.log(err);
         await transaction.rollback();
         return common.throwException(err, 'fetch Call Details Api', req, res);
     }
@@ -304,7 +303,6 @@ exports.callFilter = async (req, res) => {
         };
         return res.status(status.OK).json({ data: response });
     } catch (err) {
-        console.log(err);
         return common.throwException(err, 'fetch Call Details Api', req, res);
     }
 };

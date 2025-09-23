@@ -3,24 +3,26 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.bulkUpdate(
-            'menu_order_role',
+            'user',
             {
-                deletedAt: new Date(),
+                email: 'superchplgroup123@gmail.com',
+                updatedAt: new Date(),
             },
             {
-                id: '5448f4aa-4823-419f-adbb-d4576ba86128',
+                id: 'f2b13458-ac56-4c54-a6cb-53f879dbfe6c',
             }
         );
     },
 
     async down(queryInterface, Sequelize) {
         await queryInterface.bulkUpdate(
-            'menu_order_role',
+            'user',
             {
-                deletedAt: null,
+                email: 'superadmin@gmail.com',
+                updatedAt: new Date(),
             },
             {
-                id: '5448f4aa-4823-419f-adbb-d4576ba86128',
+                id: 'f2b13458-ac56-4c54-a6cb-53f879dbfe6c',
             }
         );
     },

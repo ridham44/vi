@@ -12,11 +12,23 @@ const validationRules = () => {
 
 const updateValidationRules = () => {
     return [
+        body('number')
+            .if((value, { req }) => req.user.type == 'Main Admin')
+            .notEmpty()
+            .trim()
+            .withMessage('phone number is required.'),
         body('name').notEmpty().trim().withMessage(' Name is required.'),
-        body('number').notEmpty().trim().withMessage('phone number is required.'),
         body('departmentId').notEmpty().trim().withMessage('departmentId is required.'),
-        body('tenantId').notEmpty().trim().withMessage('tenantId is required.'),
-        body('countryCode').notEmpty().trim().withMessage('CountryCode  is required.'),
+        body('tenantId')
+            .if((value, { req }) => req.user.type == 'Main Admin')
+            .notEmpty()
+            .trim()
+            .withMessage('tenantId is required.'),
+        body('countryCode')
+            .if((value, { req }) => req.user.type == 'Main Admin')
+            .notEmpty()
+            .trim()
+            .withMessage('CountryCode  is required.'),
     ];
 };
 const getPhoneValidationRules = () => {

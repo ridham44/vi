@@ -36,7 +36,7 @@ exports.userLogin = async (req, res) => {
 
         if (!user) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ status: false, message: 'Invalid Email!' });
+            return res.status(status.NotFound).json({ status: false, message: 'User not found!' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -44,25 +44,36 @@ exports.userLogin = async (req, res) => {
             await transaction.rollback();
             return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
         }
-        let type;
+        // let type;
 
-        if (user.Role.isMasterAdmin) {
-            type = 'Main Admin';
-        } else {
-            type = user.Role.name;
-        }
+        // if (user.Role.isMasterAdmin) {
+        //     type = 'Main Admin';
+        // } else {
+        //     type = user.Role.name;
+        // }
 
-        const tokenPayload = {
-            id: user.id,
-            firstName: user.firstName,
-            email: user.email,
-            type: type,
-        };
+        // const tokenPayload = {
+        //     id: user.id,
+        //     firstName: user.firstName,
+        //     email: user.email,
+        //     type: type,
+        // };
 
-        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET_API, {
-            expiresIn: process.env.TOKEN_EXPIRE_MIN,
-        });
+        // const token = jwt.sign(tokenPayload, process.env.JWT_SECRET_API, {
+        //     expiresIn: process.env.TOKEN_EXPIRE_MIN,
+        // });
 
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day expiry
+
+        await db.ForgotPassword.create(
+            {
+                userId: user.id,
+                token: token,
+                expiresAt,
+            },
+            { transaction }
+        );
         res.cookie('token', token, {
             httpOnly: true,
             secure: true,
@@ -84,99 +95,45 @@ exports.userLogin = async (req, res) => {
 
         return res.status(status.OK).json({
             status: true,
-            message: 'Login Success',
+            message: 'Login successful',
             data: userData,
         });
     } catch (err) {
-        console.log(err);
         await transaction.rollback();
         return common.throwException(err, 'User Login Api', req, res);
     }
 };
-// exports.userLogin1 = async (req, res) => {
-//     const transaction = await db.sequelize.transaction();
-//     try {
-//         const { email, password } = req.body;
 
-//         const user = await User.scope('withPassword').findOne({
-//             attributes: ['id', 'firstName', 'lastName', 'mobile', 'email', 'password', 'profileImage'],
-//             where: {
-//                 deletedAt: null,
-//                 email: email,
-//                 status: enums.Status.Active.value,
-//             },
-//             disableTenantCheck: true,
-//             include: [
-//                 {
-//                     model: db.Role,
-//                     as: 'Role',
-//                     attributes: ['name', 'isMasterAdmin'],
-//                 },
-//             ],
-//             transaction,
-//         });
+exports.userLogout = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const [affectedRows] = await db.ForgotPassword.update(
+            { used: true },
+            {
+                where: {
+                    userId: req.user.id,
+                    token: req.cookies.token,
+                },
+                transaction,
+            }
+        );
 
-//         if (!user) {
-//             await transaction.rollback();
-//             return res.status(status.NotFound).json({ status: false, message: 'Invalid Email!' });
-//         }
+        if (affectedRows > 0) {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+            });
+        }
 
-//         const isPasswordValid = await bcrypt.compare(password, user.password);
-//         if (!isPasswordValid) {
-//             await transaction.rollback();
-//             return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
-//         }
+        await transaction.commit();
 
-//         const token = crypto.randomBytes(32).toString('hex');
-//         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day expiry
-
-//         await db.ForgotPassword.create(
-//             {
-//                 userId: user.id,
-//                 token: token,
-//                 expiresAt,
-//             },
-//             { transaction }
-//         );
-//         res.cookie('token', token, {
-//             httpOnly: true,
-//             secure: true,
-//             //domain: ".inc1.devtunnels.ms",
-//             sameSite: 'none', //.env.NODE_ENV === 'production' ? 'none' : 'lax',
-//             maxAge: 24 * 60 * 60 * 1000,
-//         });
-
-//         const userData = {
-//             firstName: user.firstName,
-//             lastName: user.lastName,
-//             mobile: user.mobile,
-//             email: user.email,
-//             profileImage: user.profileImage,
-//             role: user.Role.name,
-//         };
-
-//         await transaction.commit();
-
-//         return res.status(status.OK).json({
-//             status: true,
-//             message: 'Login Success',
-//             data: userData,
-//         });
-//     } catch (err) {
-//         console.log(err);
-//         await transaction.rollback();
-//         return common.throwException(err, 'User Login Api', req, res);
-//     }
-// };
-
-exports.userLogout = (req, res) => {
-    res.clearCookie('token', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-    });
-
-    res.status(status.OK).json({ message: 'Logged out successfully' });
+        return res.status(status.OK).json({ message: 'Logged out successfully' });
+    } catch (err) {
+        await transaction.rollback();
+        console.error('Logout failed:', err);
+        return res.status(status.InternalServerError).json({ message: 'Logout failed' });
+    }
 };
 
 exports.changePassword = async (req, res) => {
@@ -260,12 +217,14 @@ exports.forgotPassword = async (req, res) => {
 
         if (!user) {
             await transaction.rollback();
-            return res.status(status.NotFound).json({ status: false, message: 'User not found' });
+            return res.status(status.NotFound).json({ status: false, message: 'No account found with this email address' });
         }
 
         // Generate secure token
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+        await db.ForgotPassword.update({ used: 1 }, { where: { userId: user.id } }, { transaction });
 
         // Save token in forgot_password table
         await db.ForgotPassword.create(
@@ -284,7 +243,7 @@ exports.forgotPassword = async (req, res) => {
         });
         const mailOptions = {
             to: email?.toLowerCase(),
-            subject: 'Forgot Password',
+            subject: 'Reset your CHPL account password',
             html: htmlToSend,
         };
         await common.sendEmail(mailOptions);
@@ -410,22 +369,22 @@ exports.createUser = async (req, res) => {
             await transaction.rollback();
             return res.status(status.Conflict).json({ status: false, message: 'Email already exists!' });
         }
+        if (req.user.type != 'Main Admin') {
+            const checkDepartmentExist = await db.Department.findOne({
+                where: {
+                    id: req.body.departmentId,
+                    deletedAt: null,
+                    tenantId: req.user.tenantId,
+                },
+                disableTenantCheck: true,
+                transaction,
+            });
 
-        const checkDepartmentExist = await db.Department.findOne({
-            where: {
-                id: req.body.departmentId,
-                deletedAt: null,
-                tenantId: req.user.tenantId,
-            },
-            disableTenantCheck: true,
-            transaction,
-        });
-
-        if (!checkDepartmentExist) {
-            await transaction.rollback();
-            return res.status(status.Conflict).json({ status: false, message: 'Department not exists!' });
+            if (!checkDepartmentExist) {
+                await transaction.rollback();
+                return res.status(status.Conflict).json({ status: false, message: 'Department not exists!' });
+            }
         }
-
         const checkRoleExist = await db.Role.findOne({
             where: {
                 id: req.body.roleId,
@@ -454,18 +413,19 @@ exports.createUser = async (req, res) => {
             tenantId: req.user.tenantId,
         };
         const user = await User.create(payload, { transaction });
+        if (phoneIds) {
+            let phonesArray = [];
 
-        let phonesArray = [];
-
-        phoneIds.forEach(async (i) => {
-            phonesArray.push({
-                userId: user.id,
-                phoneId: i,
-                createdBy: req.user.id,
+            phoneIds.forEach(async (i) => {
+                phonesArray.push({
+                    userId: user.id,
+                    phoneId: i,
+                    createdBy: req.user.id,
+                });
             });
-        });
 
-        await db.UserPhones.bulkCreate(phonesArray, { transaction });
+            await db.UserPhones.bulkCreate(phonesArray, { transaction });
+        }
 
         const template = await common.getTemplateByName('email.html');
         const htmlToSend = template({
@@ -487,8 +447,6 @@ exports.createUser = async (req, res) => {
             message: 'User created successfully.',
         });
     } catch (err) {
-        console.log(err);
-
         await transaction.rollback();
         return common.throwException(err, 'Create User Api', req, res);
     }
@@ -644,8 +602,6 @@ exports.updateUser = async (req, res) => {
             message: 'User updated successfully.',
         });
     } catch (err) {
-        console.log(err);
-
         await transaction.rollback();
         return common.throwException(err, 'Update User Api', req, res);
     }
@@ -869,34 +825,6 @@ exports.getAllUser = async (req, res) => {
             disableTenantCheck: true,
         });
 
-        // const findAll = await User.findAll({
-        //     attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'status', 'createdAt', 'updatedAt'],
-        //     where: {
-        //         ...whereCondition,
-        //     },
-        //     include: [
-        //         {
-        //             model: db.Role,
-        //             as: 'Role',
-        //             attributes: ['name'],
-        //         },
-        //         {
-        //             model: db.UserPhones,
-        //             as: 'userPhones',
-        //             attributes: ['phoneId'],
-        //         },
-        //         {
-        //             model: db.Department,
-        //             as: 'Department',
-        //             attributes: ['id', 'name'],
-        //         },
-        //     ],
-        //     disableTenantCheck: true,
-        //     order: [['createdAt', 'DESC']],
-        //     limit: pageSizes,
-        //     offset: (pages - 1) * pageSizes,
-        // });
-
         if (users.length === 0) {
             return res.status(status.OK).json({
                 status: true,
@@ -906,9 +834,7 @@ exports.getAllUser = async (req, res) => {
         let response = {
             user: users,
         };
-        // let response = {
-        //     user: findAll,
-        // };
+
         return res.status(status.OK).json({
             status: true,
             message: 'Success.',

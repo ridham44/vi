@@ -1,8 +1,9 @@
 require('dotenv').config();
-const { Sequelize, fn, literal, NUMBER } = require('sequelize');
+const { Sequelize, fn, literal } = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../../../db/models');
 const { status, common } = require('../../../../utils');
+const moment = require('moment-timezone');
 
 exports.inboundCall = async (req, res) => {
     const transaction = await db.sequelize.transaction();
@@ -310,20 +311,28 @@ exports.callFilter = async (req, res) => {
 };
 
 exports.voiceActivity = async (req, res) => {
-    const transaction = await db.sequelize.transaction();
     try {
         const { fromDate, toDate, callType, agentId } = req.body;
+        const timezone = req.headers['timezone'] || 'UTC';
 
         const tenantId = req.user.tenantId;
         const whereClause = { tenantId, deletedAt: null };
 
-        let from = new Date(fromDate);
-        let to = new Date(toDate);
+        // Convert dates to UTC based on timezone
+        let startUtc, endUtc;
+        if (fromDate && toDate) {
+            startUtc = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
+            endUtc = moment.tz(toDate, timezone).endOf('day').utc().toDate();
 
-        whereClause.callStartTime = { [Op.between]: [from, to] };
+            whereClause.callStartTime = {
+                [Op.between]: [startUtc, endUtc],
+            };
+        }
 
         if (callType && callType !== 'BOTH') whereClause.callType = callType;
         if (agentId) whereClause.agentId = agentId;
+
+        // Helper to fetch grouped stats
         const fetchStats = async (where) => {
             return await db.CallDetails.findAll({
                 attributes: [
@@ -342,31 +351,46 @@ exports.voiceActivity = async (req, res) => {
             });
         };
 
+        // Current stats
         const resultCurrent = await fetchStats(whereClause);
 
-        const diffDays = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
-        let prevFrom, prevTo;
+        // Calculate previous range
+        const diffDays = moment(endUtc).diff(moment(startUtc), 'days') + 1;
 
+        let prevFromUtc, prevToUtc;
         if (diffDays === 1) {
-            prevFrom = new Date(from);
-            prevFrom.setDate(from.getDate() - 1);
-            prevTo = new Date(from);
-            prevTo.setDate(from.getDate() - 1);
+            // Previous single day
+            prevFromUtc = moment(startUtc).subtract(1, 'day').startOf('day').toDate();
+            prevToUtc = moment(startUtc).subtract(1, 'day').endOf('day').toDate();
         } else {
-            prevFrom = new Date(from);
-            prevFrom.setDate(from.getDate() - diffDays);
-            prevTo = new Date(to);
-            prevTo.setDate(to.getDate() - diffDays);
+            // Previous same-length period
+            prevFromUtc = moment(startUtc).subtract(diffDays, 'days').toDate();
+            prevToUtc = moment(endUtc).subtract(diffDays, 'days').toDate();
         }
 
-        const wherePrev = { ...whereClause, callStartTime: { [Op.between]: [prevFrom, prevTo] } };
+        const wherePrev = {
+            ...whereClause,
+            callStartTime: { [Op.between]: [prevFromUtc, prevToUtc] },
+        };
         const resultPrev = await fetchStats(wherePrev);
 
+        // Unique calls
+        const uniqueCalls = await db.CallDetails.count({
+            distinct: true,
+            col: 'callingNumber',
+            where: {
+                ...whereClause,
+                deletedAt: null,
+            },
+            disableTenantCheck: true,
+        });
+
+        // Response builder
         const buildResponse = (current, prev) => {
             const response = {
-                inbound: { totalCalls: 0, answered: 0, missed: 0, neverAttended: 0 },
+                inbound: { totalCalls: 0, answered: 0, missed: 0 },
                 outbound: { totalCalls: 0, answered: 0, notAnswered: 0, busy: 0, notReachable: 0 },
-                summary: { totalCalls: 0, uniqueCalls: 0 },
+                summary: { totalCalls: 0, uniqueCalls },
             };
 
             const toMap = (rows) => {
@@ -427,21 +451,16 @@ exports.voiceActivity = async (req, res) => {
                 };
             }
 
-            const curTotal = Number(cur.IN?.totalCalls || 0) + Number(cur.OUT?.totalCalls || 0);
-            const prevTotal = Number(prevMap.IN?.totalCalls || 0) + Number(prevMap.OUT?.totalCalls || 0);
-
-            response.summary.totalCalls = { value: curTotal, pct: calcPct(curTotal, prevTotal) };
+            response.summary.totalCalls = Number(cur.IN?.totalCalls || 0) + Number(cur.OUT?.totalCalls || 0);
 
             return response;
         };
 
         const response = buildResponse(resultCurrent, resultPrev);
 
-        await transaction.commit();
         return res.status(status.OK).json({ data: response });
     } catch (err) {
         console.error(err);
-        await transaction.rollback();
         return common.throwException(err, 'fetch Call Details Api', req, res);
     }
 };
@@ -450,6 +469,7 @@ exports.inboundCallbackAnalysis = async (req, res) => {
     try {
         const { fromDate, toDate, agentId } = req.body;
         const tenantId = req.user?.tenantId;
+        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!tenantId) {
             return res.status(status.BadRequest).json({ message: 'tenantId missing in request' });
@@ -461,8 +481,11 @@ exports.inboundCallbackAnalysis = async (req, res) => {
         };
 
         if (fromDate && toDate) {
+            const startUtc = moment.tz(fromDate, timezone).utc().toDate();
+            const endUtc = moment.tz(toDate, timezone).utc().toDate();
+
             whereClause.callStartTime = {
-                [Op.between]: [new Date(fromDate), new Date(toDate)],
+                [Op.between]: [startUtc, endUtc],
             };
         }
 
@@ -471,7 +494,10 @@ exports.inboundCallbackAnalysis = async (req, res) => {
         }
 
         const calls = await db.CallDetails.findAll({
-            where: whereClause,
+            where: {
+                ...whereClause,
+                deletedAt: null,
+            },
             attributes: { exclude: ['createdBy', 'updatedBy', 'deletedBy'] },
             disableTenantCheck: true,
         });
@@ -481,9 +507,12 @@ exports.inboundCallbackAnalysis = async (req, res) => {
         let callbackPending = 0;
 
         calls.forEach((call) => {
-            if (call.callStatus === 'MISSED' || call.callStatus === 'NOT ANSWERED') {
+            const status = (call.callStatus || '').toUpperCase().trim();
+            const callbackFlag = (call.callBack || '').toUpperCase().trim();
+
+            if (status === 'MISSED' || status === 'NOT ANSWERED') {
                 missed += 1;
-                if (call.callBack === 'YES') {
+                if (callbackFlag === 'YES') {
                     callback += 1;
                 } else {
                     callbackPending += 1;
@@ -502,6 +531,7 @@ exports.getCallSummaryByState = async (req, res) => {
     try {
         const { fromDate, toDate, agentId } = req.body;
         const tenantId = req.user?.tenantId;
+        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!tenantId) {
             return res.status(status.BadRequest).json({ message: 'tenantId missing in request' });
@@ -512,8 +542,11 @@ exports.getCallSummaryByState = async (req, res) => {
         };
 
         if (fromDate && toDate) {
+            const startUtc = moment.tz(fromDate, timezone).utc().toDate();
+            const endUtc = moment.tz(toDate, timezone).utc().toDate();
+
             whereClause.callStartTime = {
-                [Op.between]: [new Date(fromDate), new Date(toDate)],
+                [Op.between]: [startUtc, endUtc],
             };
         }
 
@@ -528,7 +561,10 @@ exports.getCallSummaryByState = async (req, res) => {
                 [Sequelize.fn('SUM', Sequelize.literal(`CASE WHEN callType = 'OUT' THEN 1 ELSE 0 END`)), 'outbound'],
                 [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalCalls'],
             ],
-            where: whereClause,
+            where: {
+                ...whereClause,
+                deletedAt: null,
+            },
             group: ['stationId'],
             disableTenantCheck: true,
         });
@@ -546,6 +582,8 @@ exports.getCallSummaryByState = async (req, res) => {
 exports.getCallTrend = async (req, res) => {
     try {
         let { fromDate, toDate, agentId } = req.body;
+        const tenantId = req.user?.tenantId;
+        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!fromDate || !toDate) {
             return res.status(status.BadRequest).json({
@@ -554,13 +592,13 @@ exports.getCallTrend = async (req, res) => {
             });
         }
 
-        const start = new Date(fromDate);
-        const end = new Date(toDate);
+        let start = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
+        let end = moment.tz(toDate, timezone).endOf('day').utc().toDate();
 
-        // If same date, show last 7 days trend
-        if (start.toDateString() === end.toDateString()) {
-            end.setHours(23, 59, 59, 999);
-            start.setDate(start.getDate() - 6);
+        // If same date, show last 7 days trend (based on client’s timezone)
+        if (moment.tz(fromDate, timezone).isSame(moment.tz(toDate, timezone), 'day')) {
+            end = moment.tz(toDate, timezone).endOf('day').utc().toDate();
+            start = moment.tz(toDate, timezone).subtract(6, 'days').startOf('day').utc().toDate();
         }
 
         // Build where clause
@@ -582,7 +620,11 @@ exports.getCallTrend = async (req, res) => {
                 [Sequelize.fn('SUM', Sequelize.literal(`CASE WHEN callStatus = 'MISSED' THEN 1 ELSE 0 END`)), 'missed'],
                 [Sequelize.fn('COUNT', Sequelize.col('id')), 'total'],
             ],
-            where: whereClause,
+            where: {
+                ...whereClause,
+                deletedAt: null,
+                tenantId,
+            },
             disableTenantCheck: true,
             group: [Sequelize.fn('DATE', Sequelize.col('callStartTime'))],
             order: [[Sequelize.fn('DATE', Sequelize.col('callStartTime')), 'ASC']],
@@ -625,12 +667,28 @@ exports.getCallTrend = async (req, res) => {
 exports.getCallInsights = async (req, res) => {
     try {
         let { fromDate, toDate, agentId, callType, type } = req.body;
+        const tenantId = req.user?.tenantId;
+        const timezone = req.headers['timezone'] || 'UTC';
 
-        const whereClause = {
-            callStartTime: {
-                [Op.between]: [new Date(fromDate), new Date(toDate)],
-            },
-        };
+        if (!tenantId) {
+            return res.status(status.BadRequest).json({
+                success: false,
+                message: 'tenantId missing in request',
+            });
+        }
+
+        // Initialize where clause
+        const whereClause = { tenantId };
+
+        // Date filtering with timezone conversion
+        if (fromDate && toDate) {
+            const startUtc = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
+            const endUtc = moment.tz(toDate, timezone).endOf('day').utc().toDate();
+
+            whereClause.callStartTime = {
+                [Op.between]: [startUtc, endUtc],
+            };
+        }
 
         if (agentId) {
             whereClause.agentId = agentId;
@@ -639,6 +697,7 @@ exports.getCallInsights = async (req, res) => {
             whereClause.callType = callType.toUpperCase();
         }
 
+        // Base attributes
         let attributes = [
             [Sequelize.col('callingNumber'), 'callerNumber'],
             [Sequelize.col('calledNumber'), 'receiverNumber'],
@@ -648,6 +707,7 @@ exports.getCallInsights = async (req, res) => {
             attributes.push([Sequelize.fn('COUNT', Sequelize.col('id')), 'count']);
         } else if (type === 'talkTime') {
             attributes.push([Sequelize.fn('SEC_TO_TIME', Sequelize.fn('SUM', Sequelize.col('conversationDuration'))), 'callDuration']);
+            attributes.push([Sequelize.fn('SUM', Sequelize.col('conversationDuration')), 'durationSeconds']);
         } else {
             return res.status(status.BadRequest).json({
                 success: false,
@@ -657,9 +717,12 @@ exports.getCallInsights = async (req, res) => {
 
         const results = await db.CallDetails.findAll({
             attributes: [[Sequelize.fn('MIN', Sequelize.col('id')), 'id'], ...attributes],
-            where: whereClause,
+            where: {
+                ...whereClause,
+                deletedAt: null,
+            },
             group: ['callingNumber', 'calledNumber'],
-            order: [[Sequelize.literal(type === 'callCount' ? 'count' : 'callDuration'), 'DESC']],
+            order: [[Sequelize.literal(type === 'callCount' ? 'count' : 'durationSeconds'), 'DESC']],
             limit: 5,
             disableTenantCheck: true,
         });
@@ -683,6 +746,8 @@ exports.getCallInsights = async (req, res) => {
 exports.getCallbackAndMissedOverview = async (req, res) => {
     try {
         let { fromDate, toDate, agentId, type } = req.body;
+        const tenantId = req.user?.tenantId;
+        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!['topMissedCalls', 'topPendingCallbacks'].includes(type)) {
             return res.status(status.BadRequest).json({
@@ -691,11 +756,18 @@ exports.getCallbackAndMissedOverview = async (req, res) => {
             });
         }
 
-        const whereClause = {
-            callStartTime: {
-                [Op.between]: [new Date(fromDate), new Date(toDate)],
-            },
-        };
+        // Initialize where clause
+        const whereClause = { tenantId };
+
+        // Date filtering with timezone conversion
+        if (fromDate && toDate) {
+            const startUtc = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
+            const endUtc = moment.tz(toDate, timezone).endOf('day').utc().toDate();
+
+            whereClause.callStartTime = {
+                [Op.between]: [startUtc, endUtc],
+            };
+        }
 
         if (agentId) {
             whereClause.agentId = agentId;
@@ -715,7 +787,10 @@ exports.getCallbackAndMissedOverview = async (req, res) => {
                 'agentId',
                 [Sequelize.fn('COUNT', Sequelize.col('id')), 'count'],
             ],
-            where: whereClause,
+            where: {
+                ...whereClause,
+                deletedAt: null,
+            },
             disableTenantCheck: true,
             group: ['callingNumber', 'agentId'],
             order: [[Sequelize.literal('count'), 'DESC']],

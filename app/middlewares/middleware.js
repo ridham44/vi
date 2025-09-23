@@ -1,4 +1,4 @@
-var jwt = require('jsonwebtoken');
+//var jwt = require('jsonwebtoken');
 const db = require('../db/models');
 const { status } = require('../../utils');
 const moment = require('moment');
@@ -27,7 +27,6 @@ const authenticateUser = async (req, res, next) => {
             attributes: {
                 exclude: ['createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'deletedAt', 'deletedBy'],
             },
-            // where: { id: decoded.id, deletedAt: null, status: '1' },
             where: { id: decoded.userId, deletedAt: null, status: '1' },
 
             include: [

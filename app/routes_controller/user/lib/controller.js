@@ -6,7 +6,7 @@ const User = db.User;
 const { status, common, enums } = require('../../../../utils');
 const bcrypt = require('bcryptjs');
 //const moment = require('moment-timezone');
-const jwt = require('jsonwebtoken');
+//const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const { fn, col } = db.Sequelize;
@@ -44,13 +44,13 @@ exports.userLogin = async (req, res) => {
             await transaction.rollback();
             return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
         }
-        let type;
+        // let type;
 
-        if (user.Role.isMasterAdmin) {
-            type = 'Main Admin';
-        } else {
-            type = user.Role.name;
-        }
+        // if (user.Role.isMasterAdmin) {
+        //     type = 'Main Admin';
+        // } else {
+        //     type = user.Role.name;
+        // }
 
         // const tokenPayload = {
         //     id: user.id,
@@ -95,7 +95,7 @@ exports.userLogin = async (req, res) => {
 
         return res.status(status.OK).json({
             status: true,
-            message: 'Login Success',
+            message: 'Login successful — you’re all set!',
             data: userData,
         });
     } catch (err) {

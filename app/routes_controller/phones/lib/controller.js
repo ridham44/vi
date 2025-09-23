@@ -122,7 +122,7 @@ exports.updatePhone = async (req, res) => {
             where: { id },
             disableTenantCheck: true,
         });
-        let updatedata = await db.Phones.update(payload, { where: { id: id }, transaction });
+        //let updatedata = await db.Phones.update(payload, { where: { id: id }, transaction });
         const logpayload = {
             event: 'Update',
             tenantId,
@@ -150,7 +150,6 @@ exports.updatePhone = async (req, res) => {
             message: 'Phone updated successfully.',
         });
     } catch (err) {
-
         await transaction.rollback();
         return common.throwException(err, 'Update phone Api', req, res);
     }
@@ -226,7 +225,7 @@ exports.getPhone = async (req, res) => {
 
 exports.getAllPhones = async (req, res) => {
     try {
-       // const { search } = req.query;
+        // const { search } = req.query;
 
         let whereCondition = {
             deletedAt: null,

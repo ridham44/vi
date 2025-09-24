@@ -15,7 +15,7 @@ module.exports = {
                 updatedAt: new Date(), 
             },
             {
-                id: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb', 
+                id: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d', 
             }
         );
     },
@@ -34,7 +34,7 @@ module.exports = {
                 updatedAt: new Date(),
             },
             {
-                id: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
+                id: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
             }
         );
     },

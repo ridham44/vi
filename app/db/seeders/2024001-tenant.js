@@ -6,7 +6,7 @@ module.exports = {
             'tenant',
             [
                 {
-                    id: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
+                    id: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
                     companyName: 'Developer(CHPL)',
                     address: 'A-Block, 5th Floor, WTT, World Trade Tower,Ahmedabad, India',
                     phone: '+91-9876543210',

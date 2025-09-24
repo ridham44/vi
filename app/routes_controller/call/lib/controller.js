@@ -82,103 +82,139 @@ exports.inboundCall = async (req, res) => {
         await transaction.commit();
         return res.status(status.OK).json({ data: response });
     } catch (err) {
-        console.log(err);
         await transaction.rollback();
         return common.throwException(err, 'fetch Call Details Api', req, res);
     }
 };
 
 exports.callFilter = async (req, res) => {
-    try {
-        const timezone = req.headers['timezone'] || 'UTC';
+   try {
+    
         const {
-            fromDate,
-            toDate,
-            startTime,
-            endTime,
             callType,
             callStatus,
             callBack,
             departmentId,
+            // agentId,
+            fromDate,
+            toDate,
+            startTime,
+            endTime,
             simNumber,
             callNumber,
             minDuration,
             maxDuration,
-            limit,
         } = req.body;
-
-        const whereConditions = [{ tenantId: req.user.tenantId }, { deletedAt: null }];
-
-        if (fromDate) {
-            const startOfDayUTC = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
-            const endOfDayUTC = moment
-                .tz(toDate || fromDate, timezone)
-                .endOf('day')
-                .utc()
-                .toDate();
-
-            whereConditions.push({
-                callStartTime: { [Op.between]: [startOfDayUTC, endOfDayUTC] },
-            });
+        //const { timezone = 'Asia/Kolkata' } = req.headers;
+ 
+        
+        const whereClause = { tenantId: req.user.tenantId, deletedAt: null };
+ 
+        if (fromDate && toDate) {
+            whereClause.callStartTime = {
+                [Op.between]: [fromDate, toDate],
+            };
         }
+ 
+         if (startTime && endTime) {
+      // Extract only time part in HH:mm:ss
+   
+      const fromTime = moment.utc(startTime).format("HH:mm:ss");
+      const toTime = moment.utc(endTime).format("HH:mm:ss");
+      
 
-        if (startTime && endTime) {
-            const startTimeOnly = moment.utc(startTime).format('HH:mm:ss');
-            const endTimeOnly = moment.utc(endTime).format('HH:mm:ss');
+      console.log("Filtering by time-of-day:", fromTime, "to", toTime);
 
-            const timeFilter =
-                startTimeOnly > endTimeOnly
-                    ? { [Op.or]: [{ [Op.gte]: startTimeOnly }, { [Op.lte]: endTimeOnly }] }
-                    : { [Op.between]: [startTimeOnly, endTimeOnly] };
-
-            whereConditions.push(Sequelize.where(Sequelize.fn('TIME', Sequelize.col('callStartTime')), timeFilter));
+      if (fromTime < toTime) {
+        // Normal range
+        whereClause[Op.and] = [
+          Sequelize.where(
+            Sequelize.fn("TIME", Sequelize.col("callStartTime")),
+            { [Op.between]: [fromTime, toTime] }
+          )
+        ];
+      } else {
+        // Cross-midnight range
+        whereClause[Op.or] = [
+          Sequelize.where(
+            Sequelize.fn("TIME", Sequelize.col("callStartTime")),
+            { [Op.gte]: fromTime }
+          ),
+          Sequelize.where(
+            Sequelize.fn("TIME", Sequelize.col("callStartTime")),
+            { [Op.lte]: toTime }
+          ),
+        ];
+      }
+    }
+ 
+        if (callType) {
+            whereClause.callType = callType;
         }
-
-        if (callType) whereConditions.push({ callType });
-        if (callStatus) whereConditions.push({ callStatus });
-        if (callBack) whereConditions.push({ callBack });
-        if (departmentId) whereConditions.push({ departmentId });
-
-        if (Array.isArray(simNumber) && simNumber.length > 0) {
+ 
+        if (callStatus) {
+            whereClause.callStatus = callStatus;
+        }
+ 
+        if (callBack) {
+            whereClause.callBack = callBack;
+        }
+ 
+        if (departmentId) {
+            whereClause.departmentId = departmentId;
+        }
+ 
+        if (simNumber.length > 0) {
             const phones = await db.Phones.findAll({
                 attributes: ['number'],
-                where: { id: { [Op.in]: simNumber } },
+                where: {
+                    id: {
+                        [Op.in]: simNumber,
+                    },
+                },  
+                
                 raw: true,
                 disableTenantCheck: true,
             });
             const phoneNumbers = phones.map((p) => p.number);
-            whereConditions.push({ agentId: { [Op.in]: phoneNumbers } });
+ 
+            whereClause.agentId = { [Op.in]: phoneNumbers };
         }
 
         if (callNumber) {
-            whereConditions.push({
-                [Op.or]: [{ callingNumber: { [Op.like]: `%${callNumber}%` } }, { calledNumber: { [Op.like]: `%${callNumber}%` } }],
-            });
+            whereClause[Op.or] = [{ callingNumber: { [Op.like]: `%${callNumber}%` } }, { calledNumber: { [Op.like]: `%${callNumber}%` } }];
         }
 
         if (minDuration !== undefined && maxDuration !== undefined) {
-            whereConditions.push({ conversationDuration: { [Op.between]: [minDuration, maxDuration] } });
+            whereClause.conversationDuration = {
+                [Op.between]: [minDuration, maxDuration],
+            };
         }
 
-        const whereClause = { [Op.and]: whereConditions };
-
+       
         const stats = await db.CallDetails.findOne({
             attributes: [
-                [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalCalls'],
-                [Sequelize.literal("SUM(CASE WHEN callType = 'IN' THEN 1 ELSE 0 END)"), 'inboundCalls'],
-                [Sequelize.literal("SUM(CASE WHEN callType = 'OUT' THEN 1 ELSE 0 END)"), 'outboundCalls'],
-                [Sequelize.literal("SUM(CASE WHEN callStatus = 'ANSWERED' THEN 1 ELSE 0 END)"), 'answeredCalls'],
-                [Sequelize.literal("SUM(CASE WHEN callStatus = 'NOT ANSWERED' THEN 1 ELSE 0 END)"), 'notAnsweredCalls'],
-                [Sequelize.literal("SUM(CASE WHEN callStatus = 'MISSED' THEN 1 ELSE 0 END)"), 'missedCalls'],
-                [Sequelize.literal("SUM(CASE WHEN callStatus = 'BUSY' THEN 1 ELSE 0 END)"), 'busyCalls'],
-                [Sequelize.literal("SUM(CASE WHEN callStatus = 'NOT-REACHABLE' THEN 1 ELSE 0 END)"), 'notReachableCalls'],
+                [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'totalCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'IN'")), 0), 'inboundCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'OUT'")), 0), 'outboundCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'ANSWERED'")), 0), 'answeredCalls'],
+                [
+                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT ANSWERED'")), 0),
+                    'notAnsweredCalls',
+                ],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'MISSED'")), 0), 'missedCalls'],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'BUSY'")), 0), 'busyCalls'],
+                [
+                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT-REACHABLE'")), 0),
+                    'notReachableCalls',
+                ],
             ],
             where: whereClause,
             disableTenantCheck: true,
             raw: true,
         });
 
-        const callDetails = await db.CallDetails.findAll({
+        const result = await db.CallDetails.findAll({
             attributes: [
                 'sourcePbxCallId',
                 'agentId',
@@ -192,48 +228,48 @@ exports.callFilter = async (req, res) => {
                 'voiceFilePath',
                 'stationId',
                 [
-                    Sequelize.literal(`CASE WHEN callType = 'IN' THEN callingNumber WHEN callType = 'OUT' THEN calledNumber ELSE NULL END`),
+                    db.sequelize.literal(`CASE 
+                        WHEN callType = 'IN' THEN callingNumber
+                        WHEN callType = 'OUT' THEN calledNumber
+                        ELSE NULL END`),
                     'caller',
                 ],
-                [Sequelize.literal(`SEC_TO_TIME(conversationDuration)`), 'conversationDuration'],
+                [db.sequelize.literal(`SEC_TO_TIME(conversationDuration)`), 'conversationDuration'],
+                [
+                    db.sequelize.literal(`(
+                      SELECT \`name\`
+                      FROM \`phones\`
+                      WHERE \`phones\`.\`number\` = \`CallDetails\`.\`agentId\`
+                      LIMIT 1
+                    )`),
+                    'agentName',
+                ],
             ],
             where: whereClause,
-            limit: limit ? parseInt(limit, 10) : undefined,
-            order: [['callStartTime', 'DESC']],
             disableTenantCheck: true,
-            raw: true,
         });
-
-        const formattedCallDetails = callDetails.map((call) => ({
-            ...call,
-            callStartTime: call.callStartTime ? moment(call.callStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
-            callEndTime: call.callEndTime ? moment(call.callEndTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
-        }));
-
         const formattedStats = {
-            inbound: Number(stats?.inboundCalls) || 0,
-            outbound: Number(stats?.outboundCalls) || 0,
-            answered: Number(stats?.answeredCalls) || 0,
-            not_answered: Number(stats?.notAnsweredCalls) || 0,
-            missed: Number(stats?.missedCalls) || 0,
-            busy: Number(stats?.busyCalls) || 0,
-            not_reachable: Number(stats?.notReachableCalls) || 0,
-            total_calls: Number(stats?.totalCalls) || 0,
+            inbound: Number(stats.inboundCalls) || 0,
+            outbound: Number(stats.outboundCalls) || 0,
+            answered: Number(stats.answeredCalls) || 0,
+            not_answered: Number(stats.notAnsweredCalls) || 0,
+            missed: Number(stats.missedCalls) || 0,
+            busy: Number(stats.busyCalls) || 0,
+            not_reachable: Number(stats.notReachableCalls) || 0,
+            total_calls: Number(stats.totalCalls) || 0,
         };
-
-        return res.status(status.OK).json({
-            data: {
-                call_details: {
-                    counts: formattedStats,
-                    data: formattedCallDetails,
-                },
+        let response = {
+            call_details: {
+                counts: formattedStats,
+                data: result,
             },
-        });
+        };
+        return res.status(status.OK).json({ data: response });
     } catch (err) {
-        console.error('Error in callFilter API:', err);
         return common.throwException(err, 'fetch Call Details Api', req, res);
     }
 };
+
 
 exports.voiceActivity = async (req, res) => {
     try {

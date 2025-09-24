@@ -1,9 +1,9 @@
 'use strict';
-
+ 
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.bulkInsert(
-            'callingdetails',
+            'callingDetails',
             [
                 {
                     id: 'b1c2d3e4-0001-0000-0000-000000000001',
@@ -22,7 +22,6 @@ module.exports = {
                     voiceFilePath: null,
                     stationId: 'ASSAM',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -44,7 +43,6 @@ module.exports = {
                     voiceFilePath: '/recordings/2025/09/01/call001.wav',
                     stationId: 'MEGHALAYA',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -66,7 +64,6 @@ module.exports = {
                     voiceFilePath: null,
                     stationId: 'MANIPUR',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -88,7 +85,6 @@ module.exports = {
                     voiceFilePath: null,
                     stationId: 'TRIPURA',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -110,7 +106,6 @@ module.exports = {
                     voiceFilePath: null,
                     stationId: 'NAGALAND',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -132,7 +127,6 @@ module.exports = {
                     voiceFilePath: '/recordings/2025/09/05/call002.wav',
                     stationId: 'SIKKIM',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -154,7 +148,6 @@ module.exports = {
                     voiceFilePath: '/recordings/2025/09/06/call003.wav',
                     stationId: 'ARUNACHAL PRADESH',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -176,7 +169,6 @@ module.exports = {
                     voiceFilePath: null,
                     stationId: 'MIZORAM',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -198,7 +190,6 @@ module.exports = {
                     voiceFilePath: null,
                     stationId: 'MANIPUR',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -220,7 +211,6 @@ module.exports = {
                     voiceFilePath: null,
                     stationId: 'NAGALAND',
                     tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
-                    // tenantId: '82b238ea-8c94-11f0-96ce-74d83e9d1674',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     deletedAt: null,
@@ -229,9 +219,9 @@ module.exports = {
             {}
         );
     },
-
+ 
     async down(queryInterface, Sequelize) {
-        await queryInterface.bulkDelete('callingdetails', {
+        await queryInterface.bulkDelete('callingDetails', {
             id: [
                 'b1c2d3e4-0001-0000-0000-000000000001',
                 'b1c2d3e4-0002-0000-0000-000000000002',

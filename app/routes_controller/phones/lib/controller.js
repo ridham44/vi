@@ -46,7 +46,6 @@ exports.createPhone = async (req, res) => {
             tenantId: tenantId,
         };
         let Phone = await db.Phones.create(payload, { transaction });
-        console.log('phone id is ', Phone.id);
 
         const logpayload = {
             event: 'Create',

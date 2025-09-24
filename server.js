@@ -156,5 +156,5 @@ if (process.env.NODE_ENV !== 'production') {
 
 //* Server
 httpServer.listen(process.env.PORT || 5001, function () {
-    console.log('QR server listening on port:' + process.env.PORT);
+    console.log('Magic happens on :' + process.env.PORT);
 });

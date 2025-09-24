@@ -81,14 +81,14 @@ exports.findAll = async (req, res) => {
                     model: db.MenuOrder,
                     as: 'MenuOrder',
                     required: true,
-                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level'],
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'forWhom'],
                     where: {
                         parentId: null,
                         type: enums.MenuOrderType.Group,
                         status: enums.Status.Active.value,
                         deletedAt: null,
                         forWhom: {
-                            [Op.in]: [req.user.type, 'Both'],
+                            [Op.in]: [req.query.forWhom, 'Both'],
                         },
                     },
                 },
@@ -107,14 +107,14 @@ exports.findAll = async (req, res) => {
                     model: db.MenuOrder,
                     as: 'MenuOrder',
                     required: true,
-                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId'],
+                    attributes: ['id', 'name', 'url', 'icon', 'subMenu', 'level', 'parentId', 'forWhom'],
                     where: {
                         [Op.and]: [
                             { parentId: { [Op.in]: parentMenuIds } },
                             { type: { [Op.or]: [enums.MenuOrderType.Module, enums.MenuOrderType.Group, enums.MenuOrderType.Right] } },
                             { status: enums.Status.Active.value },
                             { deletedAt: null },
-                            { [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }] },
+                            { [Op.or]: [{ forWhom: req.query.forWhom }, { forWhom: 'Both' }] },
                         ],
                     },
                 },
@@ -160,7 +160,7 @@ exports.findAllRoute = async (req, res) => {
             where: {
                 roleId: req.user.roleId,
                 status: enums.Status.Active.value,
-                deletedAt:null
+                deletedAt: null,
             },
             attributes: [],
             include: [
@@ -182,7 +182,9 @@ exports.findAllRoute = async (req, res) => {
             ],
             order: [[{ model: db.MenuOrder, as: 'MenuOrder' }, 'level', 'ASC']],
         });
+        
         const parentMenuIds = parentMenus.map((menu) => menu.MenuOrder?.id);
+        
         const childMenus = await db.MenuOrderRole.findAll({
             where: {
                 roleId: req.user.roleId,

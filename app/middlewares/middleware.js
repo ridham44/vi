@@ -71,9 +71,15 @@ const authenticateUser = async (req, res, next) => {
         let type;
         // type = decoded.type;
         type = user.Role.name;
-
+        
         req.user = user;
+        if(type == 'Admin'){            
+          req.user.type = 'Tenant';
+        }
+        else{
         req.user.type = type;
+
+        }
 
         return next();
     } catch (err) {

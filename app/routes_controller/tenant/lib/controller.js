@@ -50,7 +50,7 @@ function generateComplexPassword(length = 12) {
 //     }
 // };
 
-exports.createTenant = async (req, res) => {
+exports.    createTenant = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
         const {
@@ -161,9 +161,9 @@ exports.createTenant = async (req, res) => {
         const role = await db.Role.create(rolePayload, { transaction });
 
         if (Array.isArray(menuOrders)) {
-            const defaultMenuOrders = [modules.Department, modules.AddDepartment, modules.Add_Role_Rights, modules.Role_Rights];
+            // const defaultMenuOrders = [modules.Department, modules.AddDepartment, modules.CallLogs, modules.ManagePhone];
 
-            const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
+            const allMenuOrders = [...new Set([...menuOrders])];
 
             await Promise.all(
                 allMenuOrders.map(async (menuOrderId) => {
@@ -371,9 +371,9 @@ exports.updateTenant = async (req, res) => {
                     transaction,
                 });
 
-                const defaultMenuOrders = [modules.Department, modules.AddDepartment];
+                // const defaultMenuOrders = [modules.Department, modules.AddDepartment];
 
-                const allMenuOrders = [...new Set([...menuOrders, ...defaultMenuOrders])];
+                const allMenuOrders = [...new Set([...menuOrders])];
 
                 await Promise.all(
                     allMenuOrders.map((menuOrderId) =>
@@ -487,43 +487,7 @@ exports.getAllTenant = async (req, res) => {
 
         let whereCondition = { deletedAt: null };
 
-        // if (firstDate && lastDate) {
-        //     whereCondition.createdAt = { [Op.between]: [firstDate, lastDate] };
-        // } else if (firstDate) {
-        //     whereCondition.createdAt = { [Op.gte]: firstDate };
-        // } else if (lastDate) {
-        //     whereCondition.createdAt = { [Op.lte]: lastDate };
-        // }
-
-        // if (companyName) {
-        //     whereCondition.companyName = { [Op.like]: `%${companyName}%` };
-        // }
-        // if (address) {
-        //     whereCondition.address = { [Op.like]: `%${address}%` };
-        // }
-        // if (phone) {
-        //     whereCondition.phone = { [Op.like]: `%${phone}%` };
-        // }
-        // if (email) {
-        //     whereCondition.email = { [Op.like]: `%${email}%` };
-        // }
-        // if (isActive) {
-        //     whereCondition.status = isActive;
-        // }
-
-        // if (countryCode) {
-        //     whereCondition.countryCode = countryCode;
-        // }
-
-        // if (search) {
-        //     whereCondition[Op.or] = [
-        //         { companyName: { [Op.like]: `%${search}%` } },
-        //         { address: { [Op.like]: `%${search}%` } },
-        //         { phone: { [Op.like]: `%${search}%` } },
-        //         { email: { [Op.like]: `%${search}%` } },
-        //         { countryCode: { [Op.like]: `%${search}%` } },
-        //     ];
-        // }
+       
 
         const tenants = await db.Tenant.findAll({
             where: whereCondition,

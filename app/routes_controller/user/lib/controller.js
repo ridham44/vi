@@ -42,7 +42,7 @@ exports.userLogin = async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             await transaction.rollback();
-            return res.status(status.Unauthorized).json({ status: false, message: 'Invalid password!' });
+            return res.status(status.BadRequest).json({ status: false, message: 'Invalid password!' });
         }
         // let type;
 

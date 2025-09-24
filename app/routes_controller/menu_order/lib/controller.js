@@ -88,7 +88,7 @@ exports.findAll = async (req, res) => {
                         status: enums.Status.Active.value,
                         deletedAt: null,
                         forWhom: {
-                            [Op.in]: [req.user.type, 'Both'],
+                            [Op.in]: [req.query.forWhom, 'Both'],
                         },
                     },
                 },
@@ -114,7 +114,7 @@ exports.findAll = async (req, res) => {
                             { type: { [Op.or]: [enums.MenuOrderType.Module, enums.MenuOrderType.Group, enums.MenuOrderType.Right] } },
                             { status: enums.Status.Active.value },
                             { deletedAt: null },
-                            { [Op.or]: [{ forWhom: req.user.type }, { forWhom: 'Both' }] },
+                            { [Op.or]: [{ forWhom: req.query.forWhom }, { forWhom: 'Both' }] },
                         ],
                     },
                 },
@@ -182,7 +182,9 @@ exports.findAllRoute = async (req, res) => {
             ],
             order: [[{ model: db.MenuOrder, as: 'MenuOrder' }, 'level', 'ASC']],
         });
+        
         const parentMenuIds = parentMenus.map((menu) => menu.MenuOrder?.id);
+        
         const childMenus = await db.MenuOrderRole.findAll({
             where: {
                 roleId: req.user.roleId,

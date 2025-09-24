@@ -325,7 +325,7 @@ exports.resetPassword = async (req, res) => {
 exports.createUser = async (req, res) => {
     const transaction = await db.sequelize.transaction();
     try {
-        const { firstName, lastName, email, password, phoneIds } = req.body;
+        const { firstName, lastName, email, password, phoneIds, status } = req.body;
         const file = req.file;
         let tenantId;
         if (req.user.type != 'Main Admin') {
@@ -408,7 +408,7 @@ exports.createUser = async (req, res) => {
             password,
             departmentId: req.body?.departmentId,
             profileImage: file ? `/uploads/userProfile/${file.filename}` : null,
-            status: enums.Status.Active.value,
+            status,
             createdBy: req.user.id,
             tenantId: req.user.tenantId,
         };

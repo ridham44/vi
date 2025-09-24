@@ -26,7 +26,7 @@ module.exports = {
                     // systemDefault: true,
                     description: 'Employee',
                     status: '1',
-                    tenantId: 'c8ee3fcd-6c4e-11ef-936e-34415d71a6fb',
+                    tenantId: '4bb7008c-0f39-4ae0-9da0-4e365f4b995d',
                     createdAt: '2024-04-25 09:50:11',
                     updatedAt: '2024-04-25 09:50:11',
                 },

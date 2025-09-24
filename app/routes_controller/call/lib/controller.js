@@ -90,7 +90,7 @@ exports.inboundCall = async (req, res) => {
 
 exports.callFilter = async (req, res) => {
     try {
-        const timezone = req.headers['timezone'] || 'UTC'; 
+        const timezone = req.headers['timezone'] || 'UTC';
         const {
             fromDate,
             toDate,
@@ -107,27 +107,37 @@ exports.callFilter = async (req, res) => {
             limit,
         } = req.body;
 
-        const whereClause = { tenantId: req.user.tenantId, deletedAt: null };
+        const whereConditions = [{ tenantId: req.user.tenantId }, { deletedAt: null }];
 
-        if (fromDate && toDate) {
-            whereClause.callStartTime = {
-                [Op.between]: [new Date(fromDate), new Date(toDate)],
-            };
+        if (fromDate) {
+            const startOfDayUTC = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
+            const endOfDayUTC = moment
+                .tz(toDate || fromDate, timezone)
+                .endOf('day')
+                .utc()
+                .toDate();
+
+            whereConditions.push({
+                callStartTime: { [Op.between]: [startOfDayUTC, endOfDayUTC] },
+            });
         }
 
         if (startTime && endTime) {
-            whereClause[Op.and] = [
-                Sequelize.where(
-                    Sequelize.fn('TIME', Sequelize.col('callStartTime')),
-                    { [Op.between]: [startTime, endTime] }
-                ),
-            ];
+            const startTimeOnly = moment.utc(startTime).format('HH:mm:ss');
+            const endTimeOnly = moment.utc(endTime).format('HH:mm:ss');
+
+            const timeFilter =
+                startTimeOnly > endTimeOnly
+                    ? { [Op.or]: [{ [Op.gte]: startTimeOnly }, { [Op.lte]: endTimeOnly }] }
+                    : { [Op.between]: [startTimeOnly, endTimeOnly] };
+
+            whereConditions.push(Sequelize.where(Sequelize.fn('TIME', Sequelize.col('callStartTime')), timeFilter));
         }
 
-        if (callType) whereClause.callType = callType;
-        if (callStatus) whereClause.callStatus = callStatus;
-        if (callBack) whereClause.callBack = callBack;
-        if (departmentId) whereClause.departmentId = departmentId;
+        if (callType) whereConditions.push({ callType });
+        if (callStatus) whereConditions.push({ callStatus });
+        if (callBack) whereConditions.push({ callBack });
+        if (departmentId) whereConditions.push({ departmentId });
 
         if (Array.isArray(simNumber) && simNumber.length > 0) {
             const phones = await db.Phones.findAll({
@@ -137,38 +147,38 @@ exports.callFilter = async (req, res) => {
                 disableTenantCheck: true,
             });
             const phoneNumbers = phones.map((p) => p.number);
-            whereClause.agentId = { [Op.in]: phoneNumbers };
+            whereConditions.push({ agentId: { [Op.in]: phoneNumbers } });
         }
 
         if (callNumber) {
-            whereClause[Op.or] = [
-                { callingNumber: { [Op.like]: `%${callNumber}%` } },
-                { calledNumber: { [Op.like]: `%${callNumber}%` } },
-            ];
+            whereConditions.push({
+                [Op.or]: [{ callingNumber: { [Op.like]: `%${callNumber}%` } }, { calledNumber: { [Op.like]: `%${callNumber}%` } }],
+            });
         }
 
         if (minDuration !== undefined && maxDuration !== undefined) {
-            whereClause.conversationDuration = { [Op.between]: [minDuration, maxDuration] };
+            whereConditions.push({ conversationDuration: { [Op.between]: [minDuration, maxDuration] } });
         }
+
+        const whereClause = { [Op.and]: whereConditions };
 
         const stats = await db.CallDetails.findOne({
             attributes: [
-                [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'totalCalls'],
-                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'IN'")), 0), 'inboundCalls'],
-                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'OUT'")), 0), 'outboundCalls'],
-                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'ANSWERED'")), 0), 'answeredCalls'],
-                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT ANSWERED'")), 0), 'notAnsweredCalls'],
-                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'MISSED'")), 0), 'missedCalls'],
-                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'BUSY'")), 0), 'busyCalls'],
-                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT-REACHABLE'")), 0), 'notReachableCalls'],
+                [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalCalls'],
+                [Sequelize.literal("SUM(CASE WHEN callType = 'IN' THEN 1 ELSE 0 END)"), 'inboundCalls'],
+                [Sequelize.literal("SUM(CASE WHEN callType = 'OUT' THEN 1 ELSE 0 END)"), 'outboundCalls'],
+                [Sequelize.literal("SUM(CASE WHEN callStatus = 'ANSWERED' THEN 1 ELSE 0 END)"), 'answeredCalls'],
+                [Sequelize.literal("SUM(CASE WHEN callStatus = 'NOT ANSWERED' THEN 1 ELSE 0 END)"), 'notAnsweredCalls'],
+                [Sequelize.literal("SUM(CASE WHEN callStatus = 'MISSED' THEN 1 ELSE 0 END)"), 'missedCalls'],
+                [Sequelize.literal("SUM(CASE WHEN callStatus = 'BUSY' THEN 1 ELSE 0 END)"), 'busyCalls'],
+                [Sequelize.literal("SUM(CASE WHEN callStatus = 'NOT-REACHABLE' THEN 1 ELSE 0 END)"), 'notReachableCalls'],
             ],
             where: whereClause,
-            limit,
             disableTenantCheck: true,
             raw: true,
         });
 
-        let result = await db.CallDetails.findAll({
+        const callDetails = await db.CallDetails.findAll({
             attributes: [
                 'sourcePbxCallId',
                 'agentId',
@@ -182,48 +192,45 @@ exports.callFilter = async (req, res) => {
                 'voiceFilePath',
                 'stationId',
                 [
-                    db.sequelize.literal(`CASE 
-                        WHEN callType = 'IN' THEN callingNumber
-                        WHEN callType = 'OUT' THEN calledNumber
-                        ELSE NULL END`),
+                    Sequelize.literal(`CASE WHEN callType = 'IN' THEN callingNumber WHEN callType = 'OUT' THEN calledNumber ELSE NULL END`),
                     'caller',
                 ],
-                [db.sequelize.literal(`SEC_TO_TIME(conversationDuration)`), 'conversationDuration'],
+                [Sequelize.literal(`SEC_TO_TIME(conversationDuration)`), 'conversationDuration'],
             ],
             where: whereClause,
-            limit,
+            limit: limit ? parseInt(limit, 10) : undefined,
+            order: [['callStartTime', 'DESC']],
             disableTenantCheck: true,
             raw: true,
         });
 
-        // Convert times to local timezone
-        result = result.map((r) => ({
-            ...r,
-            callStartTime: r.callStartTime ? moment(r.callStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
-            callEndTime: r.callEndTime ? moment(r.callEndTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+        const formattedCallDetails = callDetails.map((call) => ({
+            ...call,
+            callStartTime: call.callStartTime ? moment(call.callStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+            callEndTime: call.callEndTime ? moment(call.callEndTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
         }));
 
         const formattedStats = {
-            inbound: Number(stats.inboundCalls) || 0,
-            outbound: Number(stats.outboundCalls) || 0,
-            answered: Number(stats.answeredCalls) || 0,
-            not_answered: Number(stats.notAnsweredCalls) || 0,
-            missed: Number(stats.missedCalls) || 0,
-            busy: Number(stats.busyCalls) || 0,
-            not_reachable: Number(stats.notReachableCalls) || 0,
-            total_calls: Number(stats.totalCalls) || 0,
+            inbound: Number(stats?.inboundCalls) || 0,
+            outbound: Number(stats?.outboundCalls) || 0,
+            answered: Number(stats?.answeredCalls) || 0,
+            not_answered: Number(stats?.notAnsweredCalls) || 0,
+            missed: Number(stats?.missedCalls) || 0,
+            busy: Number(stats?.busyCalls) || 0,
+            not_reachable: Number(stats?.notReachableCalls) || 0,
+            total_calls: Number(stats?.totalCalls) || 0,
         };
 
         return res.status(status.OK).json({
             data: {
                 call_details: {
                     counts: formattedStats,
-                    data: result,
+                    data: formattedCallDetails,
                 },
             },
         });
     } catch (err) {
-        console.log(err);
+        console.error('Error in callFilter API:', err);
         return common.throwException(err, 'fetch Call Details Api', req, res);
     }
 };
@@ -569,7 +576,7 @@ exports.getCallTrend = async (req, res) => {
 
         // Map DB results by date string
         const dbMap = {};
-        results.forEach(r => {
+        results.forEach((r) => {
             const d = r.get({ plain: true });
             dbMap[d.date] = {
                 answered: parseInt(d.answered),
@@ -603,7 +610,6 @@ exports.getCallTrend = async (req, res) => {
         }
 
         res.status(status.OK).json({ success: true, data: trend });
-
     } catch (error) {
         console.error(error);
         res.status(status.InternalServerError).json({

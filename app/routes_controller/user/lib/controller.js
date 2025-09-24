@@ -95,7 +95,7 @@ exports.userLogin = async (req, res) => {
 
         return res.status(status.OK).json({
             status: true,
-            message: 'Login successful — you’re all set!',
+            message: 'Login successful',
             data: userData,
         });
     } catch (err) {

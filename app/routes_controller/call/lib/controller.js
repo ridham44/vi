@@ -90,6 +90,7 @@ exports.inboundCall = async (req, res) => {
 
 exports.callFilter = async (req, res) => {
     try {
+        const timezone = req.headers['timezone'] || 'UTC'; 
         const {
             fromDate,
             toDate,
@@ -99,13 +100,11 @@ exports.callFilter = async (req, res) => {
             callStatus,
             callBack,
             departmentId,
-            // agentId,
             simNumber,
             callNumber,
             minDuration,
             maxDuration,
             limit,
-            //searchInArchive,
         } = req.body;
 
         const whereClause = { tenantId: req.user.tenantId, deletedAt: null };
@@ -118,40 +117,22 @@ exports.callFilter = async (req, res) => {
 
         if (startTime && endTime) {
             whereClause[Op.and] = [
-                Sequelize.where(Sequelize.fn('TIME', Sequelize.col('callStartTime')), {
-                    [Op.between]: [startTime, endTime],
-                }),
+                Sequelize.where(
+                    Sequelize.fn('TIME', Sequelize.col('callStartTime')),
+                    { [Op.between]: [startTime, endTime] }
+                ),
             ];
         }
 
-        if (callType) {
-            whereClause.callType = callType;
-        }
-
-        if (callStatus) {
-            whereClause.callStatus = callStatus;
-        }
-
-        if (callBack) {
-            whereClause.callBack = callBack;
-        }
-
-        if (departmentId) {
-            whereClause.departmentId = departmentId;
-        }
-
-        // if (agentId) {
-        //     whereClause.agentId = agentId;
-        // }
+        if (callType) whereClause.callType = callType;
+        if (callStatus) whereClause.callStatus = callStatus;
+        if (callBack) whereClause.callBack = callBack;
+        if (departmentId) whereClause.departmentId = departmentId;
 
         if (Array.isArray(simNumber) && simNumber.length > 0) {
             const phones = await db.Phones.findAll({
                 attributes: ['number'],
-                where: {
-                    id: {
-                        [Op.in]: simNumber,
-                    },
-                },
+                where: { id: { [Op.in]: simNumber } },
                 raw: true,
                 disableTenantCheck: true,
             });
@@ -160,44 +141,15 @@ exports.callFilter = async (req, res) => {
         }
 
         if (callNumber) {
-            whereClause[Op.or] = [{ callingNumber: { [Op.like]: `%${callNumber}%` } }, { calledNumber: { [Op.like]: `%${callNumber}%` } }];
+            whereClause[Op.or] = [
+                { callingNumber: { [Op.like]: `%${callNumber}%` } },
+                { calledNumber: { [Op.like]: `%${callNumber}%` } },
+            ];
         }
 
         if (minDuration !== undefined && maxDuration !== undefined) {
-            whereClause.conversationDuration = {
-                [Op.between]: [minDuration, maxDuration],
-            };
+            whereClause.conversationDuration = { [Op.between]: [minDuration, maxDuration] };
         }
-
-        // if (!searchInArchive) {
-        //     whereClause.deletedAt = null;
-        // }
-
-        // const getPreviousDateRange = async (fromDate, toDate) => {
-        //     // Convert to Date objects
-        //     const start = new Date(fromDate);
-        //     const end = new Date(toDate);
-
-        //     // Calculate range length in days (inclusive)
-        //     const diffTime = end.getTime() - start.getTime();
-        //     const daysCount = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-        //     // Subtract the same number of days from both
-        //     const prevStart = new Date(start);
-        //     prevStart.setDate(start.getDate() - daysCount);
-
-        //     const prevEnd = new Date(end);
-        //     prevEnd.setDate(end.getDate() - daysCount);
-
-        //     // Format YYYY-MM-DD
-        //     // const formatDate = (d) => d.toISOString().split('T')[0]; // returns YYYY-MM-DD
-        //     // console.log('past date', prevStart);
-
-        //     return {
-        //         startDate: prevStart,
-        //         endDate: prevEnd,
-        //     };
-        // };
 
         const stats = await db.CallDetails.findOne({
             attributes: [
@@ -205,46 +157,18 @@ exports.callFilter = async (req, res) => {
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'IN'")), 0), 'inboundCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callType = 'OUT'")), 0), 'outboundCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'ANSWERED'")), 0), 'answeredCalls'],
-                // [
-                //     db.sequelize.fn(
-                //         'COALESCE',
-                //         db.sequelize.fn(
-                //             'SUM',
-                //             db.sequelize.literal("CASE WHEN callStatus = 'ANSWERED' AND callType = 'IN' THEN 1 ELSE 0 END")
-                //         ),
-                //         0
-                //     ),
-                //     'inansweredCalls',
-                // ],
-                // [
-                //     db.sequelize.fn(
-                //         'COALESCE',
-                //         db.sequelize.fn(
-                //             'SUM',
-                //             db.sequelize.literal("CASE WHEN callStatus = 'ANSWERED' AND callType = 'OUT' THEN 1 ELSE 0 END")
-                //         ),
-                //         0
-                //     ),
-                //     'outansweredCalls',
-                // ],
-                [
-                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT ANSWERED'")), 0),
-                    'notAnsweredCalls',
-                ],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT ANSWERED'")), 0), 'notAnsweredCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'MISSED'")), 0), 'missedCalls'],
                 [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'BUSY'")), 0), 'busyCalls'],
-                [
-                    db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT-REACHABLE'")), 0),
-                    'notReachableCalls',
-                ],
+                [db.sequelize.fn('COALESCE', db.sequelize.fn('SUM', db.sequelize.literal("callStatus = 'NOT-REACHABLE'")), 0), 'notReachableCalls'],
             ],
             where: whereClause,
-            limit: limit,
+            limit,
             disableTenantCheck: true,
             raw: true,
         });
 
-        const result = await db.CallDetails.findAll({
+        let result = await db.CallDetails.findAll({
             attributes: [
                 'sourcePbxCallId',
                 'agentId',
@@ -265,21 +189,19 @@ exports.callFilter = async (req, res) => {
                     'caller',
                 ],
                 [db.sequelize.literal(`SEC_TO_TIME(conversationDuration)`), 'conversationDuration'],
-                // [
-                //     db.sequelize.literal(`(
-                //         SELECT "name"
-                //         FROM "Phones"
-                //         WHERE "Phones"."number" = "CallDetails"."agentId"
-                //         LIMIT 1
-                //     )`),
-                //     'agentName',
-                // ],
             ],
             where: whereClause,
-            limit: limit,
+            limit,
             disableTenantCheck: true,
+            raw: true,
         });
-        // console.log('past count', pastCount.pasttotalCalls, 'curren count', stats.totalCalls);
+
+        // Convert times to local timezone
+        result = result.map((r) => ({
+            ...r,
+            callStartTime: r.callStartTime ? moment(r.callStartTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+            callEndTime: r.callEndTime ? moment(r.callEndTime).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+        }));
 
         const formattedStats = {
             inbound: Number(stats.inboundCalls) || 0,
@@ -288,22 +210,18 @@ exports.callFilter = async (req, res) => {
             not_answered: Number(stats.notAnsweredCalls) || 0,
             missed: Number(stats.missedCalls) || 0,
             busy: Number(stats.busyCalls) || 0,
-            // in_answerd: Number(stats.inansweredCalls) || 0,
-            // out_answerd: Number(stats.outansweredCalls) || 0,
             not_reachable: Number(stats.notReachableCalls) || 0,
             total_calls: Number(stats.totalCalls) || 0,
-            // total_calls_percentage:
-            //     pastCount.pasttotalCalls > 0
-            //         ? ((Number(stats.totalCalls) - Number(pastCount.pasttotalCalls)) / Number(pastCount.pasttotalCalls)) * 100
-            //         : 0,
         };
-        let response = {
-            call_details: {
-                counts: formattedStats,
-                data: result,
+
+        return res.status(status.OK).json({
+            data: {
+                call_details: {
+                    counts: formattedStats,
+                    data: result,
+                },
             },
-        };
-        return res.status(status.OK).json({ data: response });
+        });
     } catch (err) {
         console.log(err);
         return common.throwException(err, 'fetch Call Details Api', req, res);
@@ -313,26 +231,31 @@ exports.callFilter = async (req, res) => {
 exports.voiceActivity = async (req, res) => {
     try {
         const { fromDate, toDate, callType, agentId } = req.body;
-        const timezone = req.headers['timezone'] || 'UTC';
 
         const tenantId = req.user.tenantId;
         const whereClause = { tenantId, deletedAt: null };
 
-        // Convert dates to UTC based on timezone
-        let startUtc, endUtc;
-        if (fromDate && toDate) {
-            startUtc = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
-            endUtc = moment.tz(toDate, timezone).endOf('day').utc().toDate();
+        if (fromDate || toDate) {
+            const conditions = [];
 
-            whereClause.callStartTime = {
-                [Op.between]: [startUtc, endUtc],
-            };
+            if (fromDate) {
+                conditions.push({
+                    callStartTime: { [Op.gte]: fromDate },
+                });
+            }
+
+            if (toDate) {
+                conditions.push({
+                    callStartTime: { [Op.lte]: toDate },
+                });
+            }
+
+            whereClause[Op.or] = conditions;
         }
 
         if (callType && callType !== 'BOTH') whereClause.callType = callType;
         if (agentId) whereClause.agentId = agentId;
 
-        // Helper to fetch grouped stats
         const fetchStats = async (where) => {
             return await db.CallDetails.findAll({
                 attributes: [
@@ -351,21 +274,17 @@ exports.voiceActivity = async (req, res) => {
             });
         };
 
-        // Current stats
         const resultCurrent = await fetchStats(whereClause);
 
-        // Calculate previous range
-        const diffDays = moment(endUtc).diff(moment(startUtc), 'days') + 1;
+        const diffDays = moment(toDate).diff(moment(fromDate), 'days') + 1;
 
         let prevFromUtc, prevToUtc;
         if (diffDays === 1) {
-            // Previous single day
-            prevFromUtc = moment(startUtc).subtract(1, 'day').startOf('day').toDate();
-            prevToUtc = moment(startUtc).subtract(1, 'day').endOf('day').toDate();
+            prevFromUtc = moment(fromDate).subtract(1, 'day').startOf('day').toDate();
+            prevToUtc = moment(fromDate).subtract(1, 'day').endOf('day').toDate();
         } else {
-            // Previous same-length period
-            prevFromUtc = moment(startUtc).subtract(diffDays, 'days').toDate();
-            prevToUtc = moment(endUtc).subtract(diffDays, 'days').toDate();
+            prevFromUtc = moment(fromDate).subtract(diffDays, 'days').toDate();
+            prevToUtc = moment(toDate).subtract(diffDays, 'days').toDate();
         }
 
         const wherePrev = {
@@ -374,7 +293,6 @@ exports.voiceActivity = async (req, res) => {
         };
         const resultPrev = await fetchStats(wherePrev);
 
-        // Unique calls
         const uniqueCalls = await db.CallDetails.count({
             distinct: true,
             col: 'callingNumber',
@@ -385,7 +303,6 @@ exports.voiceActivity = async (req, res) => {
             disableTenantCheck: true,
         });
 
-        // Response builder
         const buildResponse = (current, prev) => {
             const response = {
                 inbound: { totalCalls: 0, answered: 0, missed: 0 },
@@ -469,7 +386,6 @@ exports.inboundCallbackAnalysis = async (req, res) => {
     try {
         const { fromDate, toDate, agentId } = req.body;
         const tenantId = req.user?.tenantId;
-        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!tenantId) {
             return res.status(status.BadRequest).json({ message: 'tenantId missing in request' });
@@ -480,13 +396,22 @@ exports.inboundCallbackAnalysis = async (req, res) => {
             tenantId: tenantId,
         };
 
-        if (fromDate && toDate) {
-            const startUtc = moment.tz(fromDate, timezone).utc().toDate();
-            const endUtc = moment.tz(toDate, timezone).utc().toDate();
+        if (fromDate || toDate) {
+            const conditions = [];
 
-            whereClause.callStartTime = {
-                [Op.between]: [startUtc, endUtc],
-            };
+            if (fromDate) {
+                conditions.push({
+                    callStartTime: { [Op.gte]: fromDate },
+                });
+            }
+
+            if (toDate) {
+                conditions.push({
+                    callStartTime: { [Op.lte]: toDate },
+                });
+            }
+
+            whereClause[Op.or] = conditions;
         }
 
         if (agentId) {
@@ -531,7 +456,6 @@ exports.getCallSummaryByState = async (req, res) => {
     try {
         const { fromDate, toDate, agentId } = req.body;
         const tenantId = req.user?.tenantId;
-        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!tenantId) {
             return res.status(status.BadRequest).json({ message: 'tenantId missing in request' });
@@ -541,13 +465,22 @@ exports.getCallSummaryByState = async (req, res) => {
             tenantId,
         };
 
-        if (fromDate && toDate) {
-            const startUtc = moment.tz(fromDate, timezone).utc().toDate();
-            const endUtc = moment.tz(toDate, timezone).utc().toDate();
+        if (fromDate || toDate) {
+            const conditions = [];
 
-            whereClause.callStartTime = {
-                [Op.between]: [startUtc, endUtc],
-            };
+            if (fromDate) {
+                conditions.push({
+                    callStartTime: { [Op.gte]: fromDate },
+                });
+            }
+
+            if (toDate) {
+                conditions.push({
+                    callStartTime: { [Op.lte]: toDate },
+                });
+            }
+
+            whereClause[Op.or] = conditions;
         }
 
         if (agentId) {
@@ -583,25 +516,29 @@ exports.getCallTrend = async (req, res) => {
     try {
         let { fromDate, toDate, agentId } = req.body;
         const tenantId = req.user?.tenantId;
-        const timezone = req.headers['timezone'] || 'UTC';
 
-        if (!fromDate || !toDate) {
+        if (!fromDate) {
             return res.status(status.BadRequest).json({
                 success: false,
-                message: 'fromDate and toDate are required',
+                message: 'fromDate is required',
             });
         }
 
-        let start = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
-        let end = moment.tz(toDate, timezone).endOf('day').utc().toDate();
+        const fromDay = moment.utc(fromDate).format('YYYY-MM-DD');
+        const toDay = toDate ? moment.utc(toDate).format('YYYY-MM-DD') : fromDay;
 
-        // If same date, show last 7 days trend (based on client’s timezone)
-        if (moment.tz(fromDate, timezone).isSame(moment.tz(toDate, timezone), 'day')) {
-            end = moment.tz(toDate, timezone).endOf('day').utc().toDate();
-            start = moment.tz(toDate, timezone).subtract(6, 'days').startOf('day').utc().toDate();
+        let start;
+        let end;
+
+        if (fromDay === toDay) {
+            // Same day → last 7 days
+            start = moment.utc(fromDate).subtract(6, 'days').startOf('day').toDate();
+            end = moment.utc(fromDate).endOf('day').toDate();
+        } else {
+            start = new Date(fromDate);
+            end = toDate ? new Date(toDate) : new Date(fromDate);
         }
 
-        // Build where clause
         const whereClause = {
             callStartTime: { [Op.between]: [start, end] },
         };
@@ -630,30 +567,43 @@ exports.getCallTrend = async (req, res) => {
             order: [[Sequelize.fn('DATE', Sequelize.col('callStartTime')), 'ASC']],
         });
 
-        const dbData = results.map((r) => r.get({ plain: true }));
+        // Map DB results by date string
+        const dbMap = {};
+        results.forEach(r => {
+            const d = r.get({ plain: true });
+            dbMap[d.date] = {
+                answered: parseInt(d.answered),
+                noAnswered: parseInt(d.noAnswered),
+                notReachable: parseInt(d.notReachable),
+                busy: parseInt(d.busy),
+                missed: parseInt(d.missed),
+                total: parseInt(d.total),
+            };
+        });
 
-        let trend = [];
-        let loopDate = new Date(start);
+        // Generate trend for last 7 days
+        const trend = [];
+        let loopDate = moment.utc(start);
+        const loopEnd = moment.utc(end);
 
-        while (loopDate <= end) {
-            const dateStr = loopDate.toISOString().split('T')[0];
-
-            const dayData = dbData.find((d) => d.date === dateStr);
+        while (loopDate.isSameOrBefore(loopEnd, 'day')) {
+            const dateStr = loopDate.format('YYYY-MM-DD');
 
             trend.push({
                 date: dateStr,
-                answered: dayData ? parseInt(dayData.answered) : 0,
-                noAnswered: dayData ? parseInt(dayData.noAnswered) : 0,
-                notReachable: dayData ? parseInt(dayData.notReachable) : 0,
-                busy: dayData ? parseInt(dayData.busy) : 0,
-                missed: dayData ? parseInt(dayData.missed) : 0,
-                total: dayData ? parseInt(dayData.total) : 0,
+                answered: dbMap[dateStr]?.answered || 0,
+                noAnswered: dbMap[dateStr]?.noAnswered || 0,
+                notReachable: dbMap[dateStr]?.notReachable || 0,
+                busy: dbMap[dateStr]?.busy || 0,
+                missed: dbMap[dateStr]?.missed || 0,
+                total: dbMap[dateStr]?.total || 0,
             });
 
-            loopDate.setDate(loopDate.getDate() + 1);
+            loopDate.add(1, 'day');
         }
 
         res.status(status.OK).json({ success: true, data: trend });
+
     } catch (error) {
         console.error(error);
         res.status(status.InternalServerError).json({
@@ -668,7 +618,6 @@ exports.getCallInsights = async (req, res) => {
     try {
         let { fromDate, toDate, agentId, callType, type } = req.body;
         const tenantId = req.user?.tenantId;
-        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!tenantId) {
             return res.status(status.BadRequest).json({
@@ -677,17 +626,24 @@ exports.getCallInsights = async (req, res) => {
             });
         }
 
-        // Initialize where clause
         const whereClause = { tenantId };
 
-        // Date filtering with timezone conversion
-        if (fromDate && toDate) {
-            const startUtc = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
-            const endUtc = moment.tz(toDate, timezone).endOf('day').utc().toDate();
+        if (fromDate || toDate) {
+            const conditions = [];
 
-            whereClause.callStartTime = {
-                [Op.between]: [startUtc, endUtc],
-            };
+            if (fromDate) {
+                conditions.push({
+                    callStartTime: { [Op.gte]: fromDate },
+                });
+            }
+
+            if (toDate) {
+                conditions.push({
+                    callStartTime: { [Op.lte]: toDate },
+                });
+            }
+
+            whereClause[Op.or] = conditions;
         }
 
         if (agentId) {
@@ -747,7 +703,6 @@ exports.getCallbackAndMissedOverview = async (req, res) => {
     try {
         let { fromDate, toDate, agentId, type } = req.body;
         const tenantId = req.user?.tenantId;
-        const timezone = req.headers['timezone'] || 'UTC';
 
         if (!['topMissedCalls', 'topPendingCallbacks'].includes(type)) {
             return res.status(status.BadRequest).json({
@@ -756,17 +711,24 @@ exports.getCallbackAndMissedOverview = async (req, res) => {
             });
         }
 
-        // Initialize where clause
         const whereClause = { tenantId };
 
-        // Date filtering with timezone conversion
-        if (fromDate && toDate) {
-            const startUtc = moment.tz(fromDate, timezone).startOf('day').utc().toDate();
-            const endUtc = moment.tz(toDate, timezone).endOf('day').utc().toDate();
+        if (fromDate || toDate) {
+            const conditions = [];
 
-            whereClause.callStartTime = {
-                [Op.between]: [startUtc, endUtc],
-            };
+            if (fromDate) {
+                conditions.push({
+                    callStartTime: { [Op.gte]: fromDate },
+                });
+            }
+
+            if (toDate) {
+                conditions.push({
+                    callStartTime: { [Op.lte]: toDate },
+                });
+            }
+
+            whereClause[Op.or] = conditions;
         }
 
         if (agentId) {

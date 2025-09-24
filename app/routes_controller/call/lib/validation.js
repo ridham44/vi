@@ -9,7 +9,6 @@ const callSummaryValidationRules = () => {
             .withMessage('fromDate must be a valid date (YYYY-MM-DD)'),
         body('toDate')
             .notEmpty()
-            .withMessage('toDate is required')
             .isISO8601()
             .withMessage('toDate must be a valid date (YYYY-MM-DD)'),
         body('agentId')

@@ -88,8 +88,7 @@ exports.inboundCall = async (req, res) => {
 };
 
 exports.callFilter = async (req, res) => {
-   try {
-    
+    try {
         const {
             callType,
             callStatus,
@@ -106,64 +105,53 @@ exports.callFilter = async (req, res) => {
             maxDuration,
         } = req.body;
         //const { timezone = 'Asia/Kolkata' } = req.headers;
- 
-        
+
         const whereClause = { tenantId: req.user.tenantId, deletedAt: null };
- 
+
         if (fromDate && toDate) {
             whereClause.callStartTime = {
                 [Op.between]: [fromDate, toDate],
             };
         }
- 
-         if (startTime && endTime) {
-      // Extract only time part in HH:mm:ss
-   
-      const fromTime = moment.utc(startTime).format("HH:mm:ss");
-      const toTime = moment.utc(endTime).format("HH:mm:ss");
-      
 
-      console.log("Filtering by time-of-day:", fromTime, "to", toTime);
+        if (startTime && endTime) {
+            // Extract only time part in HH:mm:ss
 
-      if (fromTime < toTime) {
-        // Normal range
-        whereClause[Op.and] = [
-          Sequelize.where(
-            Sequelize.fn("TIME", Sequelize.col("callStartTime")),
-            { [Op.between]: [fromTime, toTime] }
-          )
-        ];
-      } else {
-        // Cross-midnight range
-        whereClause[Op.or] = [
-          Sequelize.where(
-            Sequelize.fn("TIME", Sequelize.col("callStartTime")),
-            { [Op.gte]: fromTime }
-          ),
-          Sequelize.where(
-            Sequelize.fn("TIME", Sequelize.col("callStartTime")),
-            { [Op.lte]: toTime }
-          ),
-        ];
-      }
-    }
- 
+            const fromTime = moment.utc(startTime).format('HH:mm:ss');
+            const toTime = moment.utc(endTime).format('HH:mm:ss');
+
+            console.log('Filtering by time-of-day:', fromTime, 'to', toTime);
+
+            if (fromTime < toTime) {
+                // Normal range
+                whereClause[Op.and] = [
+                    Sequelize.where(Sequelize.fn('TIME', Sequelize.col('callStartTime')), { [Op.between]: [fromTime, toTime] }),
+                ];
+            } else {
+                // Cross-midnight range
+                whereClause[Op.or] = [
+                    Sequelize.where(Sequelize.fn('TIME', Sequelize.col('callStartTime')), { [Op.gte]: fromTime }),
+                    Sequelize.where(Sequelize.fn('TIME', Sequelize.col('callStartTime')), { [Op.lte]: toTime }),
+                ];
+            }
+        }
+
         if (callType) {
             whereClause.callType = callType;
         }
- 
+
         if (callStatus) {
             whereClause.callStatus = callStatus;
         }
- 
+
         if (callBack) {
             whereClause.callBack = callBack;
         }
- 
+
         if (departmentId) {
             whereClause.departmentId = departmentId;
         }
- 
+
         if (simNumber.length > 0) {
             const phones = await db.Phones.findAll({
                 attributes: ['number'],
@@ -171,13 +159,13 @@ exports.callFilter = async (req, res) => {
                     id: {
                         [Op.in]: simNumber,
                     },
-                },  
-                
+                },
+
                 raw: true,
                 disableTenantCheck: true,
             });
             const phoneNumbers = phones.map((p) => p.number);
- 
+
             whereClause.agentId = { [Op.in]: phoneNumbers };
         }
 
@@ -191,7 +179,6 @@ exports.callFilter = async (req, res) => {
             };
         }
 
-       
         const stats = await db.CallDetails.findOne({
             attributes: [
                 [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'totalCalls'],
@@ -270,7 +257,6 @@ exports.callFilter = async (req, res) => {
     }
 };
 
-
 exports.voiceActivity = async (req, res) => {
     try {
         const { fromDate, toDate, callType, agentId } = req.body;
@@ -278,22 +264,12 @@ exports.voiceActivity = async (req, res) => {
         const tenantId = req.user.tenantId;
         const whereClause = { tenantId, deletedAt: null };
 
-        if (fromDate || toDate) {
-            const conditions = [];
-
-            if (fromDate) {
-                conditions.push({
-                    callStartTime: { [Op.gte]: fromDate },
-                });
-            }
-
-            if (toDate) {
-                conditions.push({
-                    callStartTime: { [Op.lte]: toDate },
-                });
-            }
-
-            whereClause[Op.or] = conditions;
+        if (fromDate && toDate) {
+            whereClause.callStartTime = { [Op.between]: [fromDate, toDate] };
+        } else if (fromDate) {
+            whereClause.callStartTime = { [Op.gte]: fromDate };
+        } else if (toDate) {
+            whereClause.callStartTime = { [Op.lte]: toDate };
         }
 
         if (callType && callType !== 'BOTH') whereClause.callType = callType;
@@ -304,11 +280,11 @@ exports.voiceActivity = async (req, res) => {
                 attributes: [
                     'callType',
                     [fn('COUNT', literal('*')), 'totalCalls'],
-                    [fn('COUNT', literal(`CASE WHEN callStatus = 'ANSWERED' THEN 1 END`)), 'answered'],
-                    [fn('COUNT', literal(`CASE WHEN callStatus = 'MISSED' THEN 1 END`)), 'missed'],
-                    [fn('COUNT', literal(`CASE WHEN callStatus = 'NOT ANSWERED' THEN 1 END`)), 'notAnswered'],
-                    [fn('COUNT', literal(`CASE WHEN callStatus = 'BUSY' THEN 1 END`)), 'busy'],
-                    [fn('COUNT', literal(`CASE WHEN callStatus = 'NOT-REACHABLE' THEN 1 END`)), 'notReachable'],
+                    [fn('SUM', literal(`CASE WHEN callStatus = 'ANSWERED' THEN 1 ELSE 0 END`)), 'answered'],
+                    [fn('SUM', literal(`CASE WHEN callStatus = 'MISSED' THEN 1 ELSE 0 END`)), 'missed'],
+                    [fn('SUM', literal(`CASE WHEN callStatus = 'NOT ANSWERED' THEN 1 ELSE 0 END`)), 'notAnswered'],
+                    [fn('SUM', literal(`CASE WHEN callStatus = 'BUSY' THEN 1 ELSE 0 END`)), 'busy'],
+                    [fn('SUM', literal(`CASE WHEN callStatus = 'NOT-REACHABLE' THEN 1 ELSE 0 END`)), 'notReachable'],
                 ],
                 group: ['callType'],
                 where,
@@ -439,22 +415,12 @@ exports.inboundCallbackAnalysis = async (req, res) => {
             tenantId: tenantId,
         };
 
-        if (fromDate || toDate) {
-            const conditions = [];
-
-            if (fromDate) {
-                conditions.push({
-                    callStartTime: { [Op.gte]: fromDate },
-                });
-            }
-
-            if (toDate) {
-                conditions.push({
-                    callStartTime: { [Op.lte]: toDate },
-                });
-            }
-
-            whereClause[Op.or] = conditions;
+        if (fromDate && toDate) {
+            whereClause.callStartTime = { [Op.between]: [fromDate, toDate] };
+        } else if (fromDate) {
+            whereClause.callStartTime = { [Op.gte]: fromDate };
+        } else if (toDate) {
+            whereClause.callStartTime = { [Op.lte]: toDate };
         }
 
         if (agentId) {
@@ -508,22 +474,12 @@ exports.getCallSummaryByState = async (req, res) => {
             tenantId,
         };
 
-        if (fromDate || toDate) {
-            const conditions = [];
-
-            if (fromDate) {
-                conditions.push({
-                    callStartTime: { [Op.gte]: fromDate },
-                });
-            }
-
-            if (toDate) {
-                conditions.push({
-                    callStartTime: { [Op.lte]: toDate },
-                });
-            }
-
-            whereClause[Op.or] = conditions;
+        if (fromDate && toDate) {
+            whereClause.callStartTime = { [Op.between]: [fromDate, toDate] };
+        } else if (fromDate) {
+            whereClause.callStartTime = { [Op.gte]: fromDate };
+        } else if (toDate) {
+            whereClause.callStartTime = { [Op.lte]: toDate };
         }
 
         if (agentId) {
@@ -670,22 +626,12 @@ exports.getCallInsights = async (req, res) => {
 
         const whereClause = { tenantId };
 
-        if (fromDate || toDate) {
-            const conditions = [];
-
-            if (fromDate) {
-                conditions.push({
-                    callStartTime: { [Op.gte]: fromDate },
-                });
-            }
-
-            if (toDate) {
-                conditions.push({
-                    callStartTime: { [Op.lte]: toDate },
-                });
-            }
-
-            whereClause[Op.or] = conditions;
+        if (fromDate && toDate) {
+            whereClause.callStartTime = { [Op.between]: [fromDate, toDate] };
+        } else if (fromDate) {
+            whereClause.callStartTime = { [Op.gte]: fromDate };
+        } else if (toDate) {
+            whereClause.callStartTime = { [Op.lte]: toDate };
         }
 
         if (agentId) {
@@ -755,22 +701,12 @@ exports.getCallbackAndMissedOverview = async (req, res) => {
 
         const whereClause = { tenantId };
 
-        if (fromDate || toDate) {
-            const conditions = [];
-
-            if (fromDate) {
-                conditions.push({
-                    callStartTime: { [Op.gte]: fromDate },
-                });
-            }
-
-            if (toDate) {
-                conditions.push({
-                    callStartTime: { [Op.lte]: toDate },
-                });
-            }
-
-            whereClause[Op.or] = conditions;
+        if (fromDate && toDate) {
+            whereClause.callStartTime = { [Op.between]: [fromDate, toDate] };
+        } else if (fromDate) {
+            whereClause.callStartTime = { [Op.gte]: fromDate };
+        } else if (toDate) {
+            whereClause.callStartTime = { [Op.lte]: toDate };
         }
 
         if (agentId) {

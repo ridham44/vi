@@ -120,7 +120,7 @@ exports.callFilter = async (req, res) => {
             const fromTime = moment.utc(startTime).format('HH:mm:ss');
             const toTime = moment.utc(endTime).format('HH:mm:ss');
 
-            console.log('Filtering by time-of-day:', fromTime, 'to', toTime);
+           // console.log('Filtering by time-of-day:', fromTime, 'to', toTime);
 
             if (fromTime < toTime) {
                 // Normal range
@@ -814,5 +814,55 @@ exports.getCallDetailsById = async (req, res) => {
             message: 'Something went wrong',
             error,
         });
+    }
+};
+
+exports.simNumbers = async (req, res) => {
+    try {
+        const user = req.user;
+
+        if (!user || !user.id || !user.tenantId || !user.Role) {
+            return res.status(status.Unauthorized).json({ message: 'User information missing.' });
+        }
+        let phones;
+
+        if (user.Role.name.toLowerCase() === 'admin') {
+            phones = await db.Phones.findAll({
+                where: {
+                    tenantId: user.tenantId,
+                    deletedAt: null,
+                },
+                disableTenantCheck: true,
+                attributes: ['id', 'name', 'number', 'countryCode'],
+                order: [['name', 'ASC']],
+            });
+        } else {
+            phones = await db.UserPhones.findAll({
+                where: {
+                    userId: user.id,
+                    status: '1',
+                    deletedAt: null,
+                },
+                include: [
+                    {
+                        model: db.Phones,
+                        as: 'Phones',
+                        where: {
+                            deletedAt: null,
+                        },
+                        attributes: ['id', 'name', 'number', 'countryCode'],
+                        disableTenantCheck: true,
+                    },
+                ],
+                disableTenantCheck: true,
+            });
+
+            phones = phones.map((up) => up.Phones);
+        }
+
+        return res.status(status.OK).json({ success: true, data: phones });
+    } catch (err) {
+        console.error(err);
+        return res.status(status.InternalServerError).json({ success: false, message: err.message });
     }
 };

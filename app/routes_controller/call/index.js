@@ -31,4 +31,7 @@ router.post('/calls/overview', auth, callSummaryValidationRules(), expressValida
 //By Id
 router.get('/calls/:id', auth, controller.getCallDetailsById);
 
+// Get SIM numbers
+router.get('/sim-numbers', auth, controller.simNumbers);
+
 module.exports = router;

@@ -29,7 +29,7 @@ module.exports = {
                 {
                     id: 'b1c2d3e4-0002-0000-0000-000000000002',
                     sourcePbxCallId: 'pbx-2002',
-                    agentId: '9876543211', // OUT call, agent = callingNumber
+                    agentId: '9876543211', 
                     callingNumber: '9876543211',
                     calledNumber: '9001000002',
                     callType: 'OUT',

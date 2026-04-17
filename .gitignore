@@ -9,3 +9,4 @@ package-lock.json
 /webhookLogs
 /logs
 /firebaseAdminSDK.json
+config.bat

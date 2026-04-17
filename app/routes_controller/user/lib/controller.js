@@ -16,6 +16,8 @@ exports.userLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        //dev@chplgroup.org
+
         const user = await User.scope('withPassword').findOne({
             attributes: ['id', 'firstName', 'lastName', 'email', 'password', 'profileImage'],
             where: {

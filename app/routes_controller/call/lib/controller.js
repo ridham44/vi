@@ -120,7 +120,7 @@ exports.callFilter = async (req, res) => {
             const fromTime = moment.utc(startTime).format('HH:mm:ss');
             const toTime = moment.utc(endTime).format('HH:mm:ss');
 
-           // console.log('Filtering by time-of-day:', fromTime, 'to', toTime);
+            // console.log('Filtering by time-of-day:', fromTime, 'to', toTime);
 
             if (fromTime < toTime) {
                 // Normal range

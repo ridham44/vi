@@ -8,7 +8,7 @@ module.exports = (sequelize, Sequelize) => {
             id: {
                 type: Sequelize.UUID,
                 primaryKey: true,
-                allowNull: true,
+                allowNull: false,
                 defaultValue: Sequelize.UUIDV4,
             },
             firstName: {
@@ -19,18 +19,10 @@ module.exports = (sequelize, Sequelize) => {
                 type: Sequelize.STRING,
                 allowNull: true,
             },
-            crmUserId: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            countryCode: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            mobile: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
+            // mobile: {
+            //     type: Sequelize.STRING,
+            //     allowNull: true,
+            // },
             email: {
                 type: Sequelize.STRING,
                 allowNull: true,
@@ -57,6 +49,18 @@ module.exports = (sequelize, Sequelize) => {
                     hasManyAlias: 'Users',
                 },
             },
+            departmentId: {
+                type: Sequelize.UUID,
+                allowNull: true,
+                association: {
+                    model: 'Department',
+                    key: 'id',
+                    onUpdate: 'CASCADE',
+                    onDelete: 'RESTRICT',
+                    belongsToAlias: 'Department',
+                    hasManyAlias: 'Users',
+                },
+            },
             tenantId: {
                 type: Sequelize.UUID,
                 allowNull: true,
@@ -72,28 +76,6 @@ module.exports = (sequelize, Sequelize) => {
             profileImage: {
                 type: Sequelize.TEXT,
                 allowNull: true,
-            },
-            myOperatorUserId: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            hoduAgentId: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            fcmToken: {
-                type: Sequelize.STRING,
-                allowNull: true,
-            },
-            isEmailVerified: {
-                type: Sequelize.ENUM('0', '1'),
-                allowNull: true,
-                defaultValue: '0',
-            },
-            isPasswordChangeRequired: {
-                type: Sequelize.BOOLEAN,
-                allowNull: true,
-                defaultValue: false,
             },
             status: {
                 type: Sequelize.ENUM('0', '1'),
@@ -115,7 +97,6 @@ module.exports = (sequelize, Sequelize) => {
         },
         {
             tableName: 'user',
-            indexes: [{ unique: true, fields: ['email'] }],
             customOptions: {
                 createdBy: { value: true },
                 updatedBy: { value: true },

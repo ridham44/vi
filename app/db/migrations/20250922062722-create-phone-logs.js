@@ -1,70 +1,56 @@
 'use strict';
+
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable('user', {
+        await queryInterface.createTable('phone_logs', {
             id: {
                 type: Sequelize.UUID,
-                primaryKey: true,
                 allowNull: false,
+                primaryKey: true,
                 defaultValue: Sequelize.UUIDV4,
             },
-            firstName: {
-                type: Sequelize.STRING,
+            event: {
+                type: Sequelize.ENUM('Create', 'Update', 'Delete'),
                 allowNull: false,
             },
-            lastName: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            mobile: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            email: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            password: {
-                type: Sequelize.STRING,
-                allowNull: false,
-            },
-            profileImage: {
-                type: Sequelize.TEXT,
-                allowNull: true,
-            },
-            isAdmin: {
-                type: Sequelize.ENUM('0', '1'),
-                allowNull: false,
-                defaultValue: '0',
-            },
-            status: {
-                type: Sequelize.ENUM('1', '0'),
-                allowNull: false,
-                defaultValue: '1',
-                comment: '0 for InActive, 1 for Active',
-            },
-            roleId: {
+            phoneId: {
                 type: Sequelize.UUID,
+                allowNull: true,
                 references: {
-                    model: 'role',
+                    model: 'phones',
                     key: 'id',
                 },
                 onUpdate: 'CASCADE',
                 onDelete: 'RESTRICT',
             },
+            ipAddress: {
+                type: Sequelize.STRING(45),
+                allowNull: false,
+            },
             tenantId: {
                 type: Sequelize.UUID,
+                allowNull: true,
                 references: {
                     model: 'tenant',
                     key: 'id',
                 },
-                allowNull: true,
                 onUpdate: 'CASCADE',
                 onDelete: 'RESTRICT',
             },
             createdAt: {
-                allowNull: false,
                 type: Sequelize.DATE,
+                allowNull: false,
+                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+            },
+            updatedAt: {
+                type: Sequelize.DATE,
+                allowNull: true,
+                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+                onUpdate: Sequelize.literal('CURRENT_TIMESTAMP'),
+            },
+            deletedAt: {
+                type: Sequelize.DATE,
+                allowNull: true,
             },
             createdBy: {
                 type: Sequelize.UUID,
@@ -73,11 +59,7 @@ module.exports = {
                     key: 'id',
                 },
                 onUpdate: 'CASCADE',
-                onDelete: 'RESTRICT',
-            },
-            updatedAt: {
-                allowNull: true,
-                type: Sequelize.DATE,
+                onDelete: 'SET NULL',
             },
             updatedBy: {
                 type: Sequelize.UUID,
@@ -86,11 +68,7 @@ module.exports = {
                     key: 'id',
                 },
                 onUpdate: 'CASCADE',
-                onDelete: 'RESTRICT',
-            },
-            deletedAt: {
-                allowNull: true,
-                type: Sequelize.DATE,
+                onDelete: 'SET NULL',
             },
             deletedBy: {
                 type: Sequelize.UUID,
@@ -99,11 +77,13 @@ module.exports = {
                     key: 'id',
                 },
                 onUpdate: 'CASCADE',
-                onDelete: 'RESTRICT',
+                onDelete: 'SET NULL',
             },
         });
     },
+
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('user');
+        await queryInterface.dropTable('phone_logs');
+        await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_phone_logs_event";');
     },
 };

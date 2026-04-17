@@ -1,0 +1,19 @@
+module.exports = {
+    Dashboard: '0448f4aa-4823-419f-adbb-d4576ba868ce',
+    Profile: 'ec385572-e30c-4fb3-9613-8e3052f886a7',
+    ChangePassword: '122e6d52-f280-4198-a8ef-c04961cd3988',
+    DashboardView: 'ee59343e-49d0-42d9-a1a9-8a0e80576c0f',
+    CallLogs: 'c19ec780-7a3a-4021-98c7-e9195f53caf4',
+    Users: 'b938d270-d191-4e4f-a87e-6a3c1a06cc40',
+    Tenants: 'f49400ac-819a-11f0-8973-74d83e9d1673',
+    AddTenant: 'f49400ac-819a-11f0-8973-74d83e9d1674',
+    ManagePhone: 'a1234567-89ab-4cde-8f01-234567890abc',
+    Department: 'b204e522-e051-449a-8ba3-fafd4c3ec715',
+    AddDepartment: 'f49400ac-819a-11f0-8973-74d83e9d1623',
+    Packages: 'c1234567-89ab-4cde-8f01-234567890def',
+    Addpackages: 'd1234567-89ab-4cde-8f01-234567890fed',
+    AddPhone:'c0bcd9c5-8a28-11f0-87c0-74d83e9d1674',
+    Phone:'91a50a22-8a28-11f0-87c0-74d83e9d1674',
+    Role_Rights:'21eee5da-8a1f-11f0-87c0-74d83e9d1674',
+    Add_Role_Rights:'9bd70502-8a1f-11f0-87c0-74d83e9d1674'
+};

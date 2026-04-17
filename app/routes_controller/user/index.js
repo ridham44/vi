@@ -3,17 +3,24 @@ const auth = require('../../middlewares/middleware');
 const controller = require('./lib/controller');
 
 const { status } = require('../../../utils');
-const { loginRules, changePasswordRules, validationRules, updateValidationRules } = require('./lib/validation');
+const {
+    loginRules,
+    changePasswordRules,
+    validationRules,
+    updateValidationRules,
+    forgotPasswordRules,
+    resetPasswordRules,
+} = require('./lib/validation');
 const { expressValidate } = require('../../../utils/lib/common-function');
 const multer = require('multer');
-const path = require('path');
+//const path = require('path');
 
 const allowedType = ['image/png', 'image/jpeg', 'image/jpg'];
 
 const fileStorage = multer.diskStorage({
     destination: 'uploads/userProfile',
     filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
+        //const ext = path.extname(file.originalname);
         const filename = file.originalname.replace(/\s+/g, '_');
         cb(null, Date.now() + filename);
     },
@@ -51,9 +58,18 @@ const uploads = multer({
 
 router.post('/login', loginRules(), expressValidate, controller.userLogin);
 
+router.post('/logout', auth, controller.userLogout);
+
 router.put('/change-password', auth, changePasswordRules(), expressValidate, controller.changePassword);
 
+router.post('/forgot-password', forgotPasswordRules(), expressValidate, controller.forgotPassword);
+
+router.post('/reset-password', resetPasswordRules(), expressValidate, controller.resetPassword);
+
 router.get('/user-list', auth, controller.getAllUser);
+
+router.get('/user-summary', auth, controller.getAllData);
+
 
 router.post('/user', auth, uploads.single('profileImage'), multerMiddleware, validationRules(), expressValidate, controller.createUser);
 
@@ -71,6 +87,6 @@ router.get('/user/:id', controller.getUser);
 
 router.delete('/user/:id', auth, controller.deleteUser);
 
-router.put('/user/status/:idd', auth, controller.updateStatus);
+router.put('/user/status/:id', auth, controller.updateStatus);
 
 module.exports = router;

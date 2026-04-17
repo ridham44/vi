@@ -13,6 +13,30 @@ const CryptoJS = require('crypto-js');
 const passphrase = 'your_passphrase_here';
 
 module.exports = {
+    async getPermissionByToken(user) {
+        try {
+            let permissions = [];
+
+            // if (user?.Role?.isSystemAdmin) {
+            //     permissions = await db.MenuOrder.findAll({
+            //         attributes: [['id', 'menuOrderId']],
+            //         raw: true,
+            //     });
+            // } else {
+            permissions = await db.MenuOrderRole.findAll({
+                attributes: ['menuOrderId'],
+                where: {
+                    roleId: user.roleId,
+                },
+                raw: true,
+            });
+            // }
+            const menuOrderIds = permissions.map((i) => i.menuOrderId);
+            return menuOrderIds;
+        } catch (err) {
+            Promise.reject(err);
+        }
+    },
     async bulkUpdate(dataToUpdate, modelName, referenceField, transaction) {
         let ids = dataToUpdate.map((m1) => `'${m1[referenceField]}'`);
         let singleFields = 'SET ';
@@ -354,5 +378,28 @@ module.exports = {
         let keyData = await module.exports.encryptSecret(data, passphrase);
 
         return keyData;
+    },
+
+    async checkAssociation(id, column) {
+        let models = Object.values(db.sequelize.models);
+        let count = 0;
+
+        for (const model of models) {
+            if (!model.rawAttributes?.[column]) continue;
+
+            const associated = await model.count({
+                where: {
+                    [column]: id,
+                    deletedAt: null,
+                },
+                disableTenantCheck: true,
+            });
+
+            if (associated > 0) {
+                count++;
+            }
+        }
+
+        return count;
     },
 };

@@ -1,11 +1,11 @@
 {
     "development": {
-        "username": "chpl",
-        "password": "Chpl@321.",
-        "database": "demo_chpl",
+        "username": "root",
+        "password": "Ridham44",
+        "database": "videmo_chpl",
         "host": "localhost",
         "dialect": "mysql",
-        "pool": { "max": 5, "min": 0, "acquire": 30000, "idle": 10000 },
+        "pool": { "max": 30, "min": 0, "acquire": 30000, "idle": 10000 },
         "seederStorage": "sequelize",
         "migrationStorageTableName": "SequelizeMeta",
         "seederStorageTableName": "sequelizeData",

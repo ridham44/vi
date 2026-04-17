@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Login Credentials</title>
+        <link href="https://fonts.googleapis.com/css?family=Montserrat:400,600,700" rel="stylesheet" media="screen" />
+        <style>
+            .hover-underline:hover {
+                text-decoration: underline !important;
+            }
+
+            @media (max-width: 600px) {
+                .sm-w-full {
+                    width: 100% !important;
+                }
+
+                .sm-px-24 {
+                    padding-left: 24px !important;
+                    padding-right: 24px !important;
+                }
+
+                .sm-py-32 {
+                    padding-top: 32px !important;
+                    padding-bottom: 32px !important;
+                }
+            }
+        </style>
+    </head>
+
+    <body style="margin: 0; width: 100%; padding: 0; background-color: #eceff1; font-family: 'Montserrat', sans-serif">
+        <div role="article" aria-roledescription="email" aria-label="Login Credentials">
+            <table style="width: 100%; font-family: Montserrat, sans-serif" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td align="center" style="background-color: #eceff1; padding: 48px 0">
+                        <table class="sm-w-full" style="width: 600px" cellpadding="0" cellspacing="0">
+                            <!-- <tr>
+              <td align="center" style="padding:48px; text-align:center;">
+                <img src="images/logo.png" width="155" alt="Logo" style="max-width:100%; border:0;">
+              </td>
+            </tr> -->
+                            <tr>
+                                <td
+                                    style="
+                                        border-radius: 4px;
+                                        background-color: #ffffff;
+                                        padding: 48px;
+                                        font-size: 16px;
+                                        line-height: 24px;
+                                        color: #626262;
+                                    "
+                                >
+                                    <p style="font-size: 20px; font-weight: 600; margin-bottom: 8px">Hello {{fullName}},</p>
+                                    <p style="font-size: 18px; font-weight: 500; margin-bottom: 16px; color: #ff5850">
+                                        Welcome to Chpl! 👋
+                                    </p>
+                                    <p style="margin-bottom: 24px">
+                                        Your account has been created successfully. Use the credentials below to login:
+                                    </p>
+                                    <p style="margin-bottom: 16px">
+                                        <strong>Email:</strong> {{email}}<br />
+                                        <strong>Default Password:</strong> {{password}}
+                                    </p>
+                                    <p style="margin-bottom: 24px">
+                                        For security, please change your password after logging in for the first time.
+                                    </p>
+                                    <p style="margin-bottom: 24px">
+                                        <a
+                                            href="https://videv.chplgroup.org/login"
+                                            style="
+                                                display: inline-block;
+                                                padding: 16px 24px;
+                                                background-color: #7367f0;
+                                                color: #fff;
+                                                text-decoration: none;
+                                                border-radius: 4px;
+                                                font-weight: 600;
+                                            "
+                                        >
+                                            Login Now &rarr;
+                                        </a>
+                                    </p>
+                                    <!-- <p style="margin-bottom:16px;">
+                  If you did not expect this email, please contact
+                  <a href="mailto:support@example.com" class="hover-underline" style="color:#7367f0;">support@example.com</a>.
+                </p> -->
+                                    <p style="margin-bottom: 16px">Thanks,<br />Team Chpl</p>
+                                </td>
+                            </tr>
+                            <!-- <tr>
+              <td style="padding-top:32px; font-size:14px; color:#263238; text-align:center;">
+                Use of our service is subject to our
+                <a href="https://pixinvent.com/" style="color:#7367f0; text-decoration:none;">Terms of Use</a> and
+                <a href="https://pixinvent.com/" style="color:#7367f0; text-decoration:none;">Privacy Policy</a>.
+              </td>
+            </tr> -->
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </body>
+</html>
